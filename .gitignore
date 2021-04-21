@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.Ruserdata
+.RData
+Data/Input.RData
+movielens.RData
+ml-10M100K
+*.log
+Data backup/
+Data/Output*
+!Data/Output_020.RData
+!Data/Output_021.RData
+!Data/Output_022.RData
