@@ -2586,8 +2586,8 @@ if (file.exists("Data/Output_021.RData")) {
     scale_shape_manual(values=seq(20)) +
     geom_hline(yintercept = rmse_target_10,color="red",size = 1.05) +
     geom_hline(yintercept = rmse_target_15,color="orange",size = 1.05) +
-    geom_hline(yintercept = rmse_target_20,color="blue",size = 1.05) +
-    geom_hline(yintercept = rmse_target_25,color="green",size = 1.05) +
+    geom_hline(yintercept = rmse_target_20,color="#0099ff",size = 1.05) +
+    geom_hline(yintercept = rmse_target_25,color="#009933",size = 1.05) +
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) 
@@ -2614,12 +2614,13 @@ if (file.exists("Data/Output_021.RData")) {
     ) +
     scale_shape_manual(values=seq(14)) +
     geom_hline(yintercept = rmse_target_15,color="orange",size = 1.05) +
-    geom_hline(yintercept = rmse_target_20,color="blue",size = 1.05) +
-    geom_hline(yintercept = rmse_target_25,color="green",size = 1.05) +
+    geom_hline(yintercept = rmse_target_20,color="#0099ff",size = 1.05) +
+    geom_hline(yintercept = rmse_target_25,color="#009933",size = 1.05) +
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) 
   print(p_rmse_bestmethods_boxplot_zoom)
+  
   
   #Plot showing that the rmse order of folds is in large kept between models
   p_rmse_bestmethods_pointline <- rmse_folds_tidy %>%
@@ -2634,8 +2635,8 @@ if (file.exists("Data/Output_021.RData")) {
     geom_point(aes(colour=method),size = 3) +
     scale_shape_manual(values=seq(10)) +
     geom_hline(yintercept = rmse_target_15,color="orange",size = 1.05) +
-    geom_hline(yintercept = rmse_target_20,color="blue",size = 1.05) +
-    geom_hline(yintercept = rmse_target_25,color="green",size = 1.05) +
+    geom_hline(yintercept = rmse_target_20,color="#0099ff",size = 1.05) +
+    geom_hline(yintercept = rmse_target_25,color="#009933",size = 1.05) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),

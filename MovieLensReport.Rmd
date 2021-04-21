@@ -365,86 +365,86 @@ names(rmse_folds_results_table) <- c("method",paste("Fold",seq(10)))
 rmse_folds_results_table$`Fold 1` = cell_spec(
   rmse_folds_results_table$`Fold 1`,
   #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 1` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 1` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 1` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 1` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 1` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 1` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 1` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 1` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 2` = cell_spec(
   rmse_folds_results_table$`Fold 2`, 
   #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 2` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 2` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 2` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 2` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 2` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 2` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 2` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 2` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 3` = cell_spec(
   rmse_folds_results_table$`Fold 3`, 
   #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 3` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 3` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 3` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 3` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 3` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 3` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 3` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 3` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 4` = cell_spec(
   rmse_folds_results_table$`Fold 4`, 
   #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 4` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 4` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 4` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 4` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 4` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 4` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 4` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 4` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 5` = cell_spec(
   rmse_folds_results_table$`Fold 5`, 
   #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 5` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 5` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 5` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 5` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 5` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 5` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 5` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 5` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 6` = cell_spec(
   rmse_folds_results_table$`Fold 6`, #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 6` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 6` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 6` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 6` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 6` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 6` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 6` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 6` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 7` = cell_spec(
   rmse_folds_results_table$`Fold 7`, #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 7` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 7` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 7` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 7` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 7` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 7` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 7` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 7` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 8` = cell_spec(
   rmse_folds_results_table$`Fold 8`, #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 8` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 8` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 8` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 8` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 8` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 8` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 8` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 8` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 9` = cell_spec(
   rmse_folds_results_table$`Fold 9`, #color = "gray",
-  color = case_when(rmse_folds_results_table$`Fold 9` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 9` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 9` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 9` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 9` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 9` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 9` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 9` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_table$`Fold 10` = cell_spec(
   rmse_folds_results_table$`Fold 10`, #color ="gray",
-  color = case_when(rmse_folds_results_table$`Fold 10` < rmse_target_25~ "green",
-                    rmse_folds_results_table$`Fold 10` < rmse_target_20~ "blue",
-                    rmse_folds_results_table$`Fold 10` < rmse_target_15~ "orange",
-                    rmse_folds_results_table$`Fold 10` < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_table$`Fold 10` < rmse_target_25~ "#009933",
+                    rmse_folds_results_table$`Fold 10` < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_table$`Fold 10` < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_table$`Fold 10` < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 options(digits = 5)   # report 3 significant digits
@@ -476,28 +476,28 @@ rmse_folds_results_summary_table <- rmse_folds_results_summary %>%
 rmse_folds_results_summary_table$mean = cell_spec(
   rmse_folds_results_summary_table$mean,
   #color ="gray",
-  color = case_when(rmse_folds_results_summary_table$mean < rmse_target_25~ "green",
-                    rmse_folds_results_summary_table$mean < rmse_target_20~ "blue",
-                    rmse_folds_results_summary_table$mean < rmse_target_15~ "orange",
-                    rmse_folds_results_summary_table$mean < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_summary_table$mean < rmse_target_25~ "#009933",
+                    rmse_folds_results_summary_table$mean < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_summary_table$mean < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_summary_table$mean < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_summary_table$median = cell_spec(
   rmse_folds_results_summary_table$median,
   #color ="gray",
-  color = case_when(rmse_folds_results_summary_table$median < rmse_target_25~ "green",
-                    rmse_folds_results_summary_table$median < rmse_target_20~ "blue",
-                    rmse_folds_results_summary_table$median < rmse_target_15~ "orange",
-                    rmse_folds_results_summary_table$median < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_summary_table$median < rmse_target_25~ "#009933",
+                    rmse_folds_results_summary_table$median < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_summary_table$median < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_summary_table$median < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 rmse_folds_results_summary_table$max = cell_spec(
   rmse_folds_results_summary_table$max,
   #color ="gray",
-  color = case_when(rmse_folds_results_summary_table$max < rmse_target_25~ "green",
-                    rmse_folds_results_summary_table$max < rmse_target_20~ "blue",
-                    rmse_folds_results_summary_table$max < rmse_target_15~ "orange",
-                    rmse_folds_results_summary_table$max < rmse_target_10~ "red",
+  color = case_when(rmse_folds_results_summary_table$max < rmse_target_25~ "#009933",
+                    rmse_folds_results_summary_table$max < rmse_target_20~ "#0099ff",
+                    rmse_folds_results_summary_table$max < rmse_target_15~ "#ff6600",
+                    rmse_folds_results_summary_table$max < rmse_target_10~ "#cc0000",
                      TRUE~ "black") 
   )
 
@@ -575,14 +575,14 @@ Using the best models derived, it is now possible to calculate the RMSE on the u
 
 Doing so yields the following result: 
 
-* **`r final_pred_RMSE`** for the *movie+user+timestamp+indgenres+releaseyear reg* model (best regularised model)
-* **`r final_pred_fast_RMSE`** for the *movie+user+indgenres* model (best non regularised model)
+* **`r final_pred_RMSE`** for the *movie+user+indgenres+releaseyear+timestamp reg* model 
+* **`r final_pred_fast_RMSE`** for the *movie+user+indgenres* model 
 
 As expected, both models do beat the lowest target RMSE of `r rmse_target_25` by a significant margin. 
 
-We observe that the RMSE results is lower than than the highest RMSE observed during 10 folds cross validation for the *movie+user+indgenres* model. However it is higher than than the highest RMSE observed during 10 folds cross validation for the *movie+user+timestamp+indgenres+releaseyear reg* model. This highlights that RMSE achieved in the cross validation stage do not directly translate to general data and therefore that given an objective, it was preferable to derive a model achieving a significantly lower RMSE than our target during simplified cross validation.
+We observe that the RMSE results is lower than than the highest RMSE observed during 10 folds simplified cross validation for the *movie+user+indgenres* model. However it is higher than than the highest RMSE observed during 10 folds simplified cross validation for the *movie+user+indgenres+releaseyear+timestamp reg* model. This highlights that RMSE achieved in the cross validation stage do not directly translate to general data and therefore that given an objective, it was preferable to derive a model achieving a significantly lower RMSE than our target during simplified cross validation.
 
-The non regularised model results was produced roughly 3 times faster than the regularised model, at the final prediction stage. To this should be added the time required to tune the lambda parameters of the regularised model during simplified cross validation. This highlights that depending on the target RMSE we might want to use a simpler model for speed of execution.
+The non regularised model results was produced roughly 3 times faster than the regularised model, at the final prediction stage. To this should be added the time required to tune the lambda parameters of the regularised model during simplified cross validation. This highlights that depending on the target RMSE we can use a simpler model for speed of execution.
 
 # Conclusion and Future Work
 
