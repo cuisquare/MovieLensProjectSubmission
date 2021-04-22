@@ -1881,10 +1881,15 @@ if (load_output_data) {
 
   ### Model: movie then user then individual genres ####
   
+  #' we predict that the rating for movie i, user u is the sum of the 
+  #' following effects movie, user and individual movie genres, each applied on 
+  #' the previous baseline 
+  #' 
   #' The individual genres were extracted in the data cleaning section at the 
   #' start of the output data section and saved in the indgenres_relevant data
   #' frame. The list of individual genres was filtered to only keep those with 
   #' more than 50 movies to ensure relevance.
+  #' 
   #' The individual genres effect is calculated in a similar manner as the other 
   #' effects, to obtain the effect that a single genre would have on a rating.
   #' Then, a genres effect is derived for any new combination of genres by 
@@ -2087,7 +2092,7 @@ if (load_output_data) {
   
   ### Model: movie+user+indgenres reg  ####
   
-  #' we predict that the rating for movie i, user u is t the sum of the 
+  #' we predict that the rating for movie i, user u is the sum of the 
   #' following effects movie, user and individual movie genres, each applied on 
   #' the previous baseline with regularisation.
   get_pred_muig_reg <- function(training_set,test_set,
@@ -2230,10 +2235,9 @@ if (load_output_data) {
       )
     )
   
-  #' the trained function is get_pred_muig_reg as obtained by 
-  #' minimizing the RMSE on the worst fold with multiple lambdas and keeping 
-  #' user_pred_boundaries_training_set unset so it is re-extracted for each 
-  #' training_set 
+  #' the trained function is get_pred_muig_reg using multiple lambdas obtained
+  #' in the minimizing process and keeping user_pred_boundaries_training_set 
+  #' unset so it is re-extracted for each training_set 
   get_pred_muig_reg_trained <- function(tr,te) {
     get_pred_muig_reg(training_set = tr,
                       test_set = te,
@@ -2257,11 +2261,16 @@ if (load_output_data) {
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
+  
   ### Model: movie+user+indgenres+releaseyear reg  ####
   
-  #we predict that the rating for movie i, user u is t the sum of
-  #the following effects in that order movie effect, user effect and 
-  #movie genres effect and release year effect, each applied on the previous baseline
+  #' we predict that the rating for movie i, user u is the sum of the 
+  #' following effects in that order movie user genres effect and release year 
+  #' effects, each applied on the previous baseline with regularisation
+  #' 
+  #' The release years were extracted in the data cleaning section at the 
+  #' start of the output data section and saved in the release_years data
+  #' frame. 
   get_pred_muigy_reg <- function(training_set,test_set,
                                   user_pred_boundaries_training_set,
                                   l_m,l_u,l_g,l_y) {
@@ -2325,8 +2334,6 @@ if (load_output_data) {
     
     
     print("prediction")
-    # indgenres_relevant_test <- indgenres_relevant %>% 
-    #   filter(movieId %in% test_set$movieId)
     pred_mean_movie_user_year_peruser_reg <- test_set %>%
       select(movieId,userId,rating,genres) %>%
       left_join(effect_movie,by="movieId") %>%
@@ -2358,7 +2365,7 @@ if (load_output_data) {
     return(pred_mean_movie_user_year_peruser_reg)
   }
 
-  #single lambda applied to movie user and genres
+  #' Case 1 Unique lambda: l_m = l_u = l_g = l_y
   get_RMSE_worst_fold_muigy_reg <- function(l) {
     OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
                         get_pred_muigy_reg(
@@ -2372,11 +2379,14 @@ if (load_output_data) {
                           ))
     return(OutRMSE)
   }
-  Details_Lambda_Min_RMSE_worst_fold_muigy <- Find_Get_Val_Local_Minimum_Golden(0,20,get_RMSE_worst_fold_muigy_reg ,precision_min_RMSE,TRUE,TRUE)  
-  Lambda_Min_RMSE_worst_fold_muigy   <- Details_Lambda_Min_RMSE_worst_fold_muigy$Output
-  print(Lambda_Min_RMSE_worst_fold_muigy) #12.09757
+  Details_Lambda_Min_RMSE_worst_fold_muigy <- Find_Get_Val_Local_Minimum_Golden(
+    0,20,
+    get_RMSE_worst_fold_muigy_reg,
+    precision_min_RMSE,TRUE,TRUE)  
   
-  #attempt to separate lambda for release year using lambdas previously obtained for movie+users and indgenres
+  #' Case 2 Incremental lambdas: The lambdas found in the movie+user+indgenres
+  #' model are kept and only the lambda for release year effect is used as a 
+  #' variable
   get_RMSE_worst_fold_peruser_reg_mu_ig_y <- function(l) {
     OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
                         get_pred_muigy_reg(
@@ -2390,25 +2400,17 @@ if (load_output_data) {
                         ))
     return(OutRMSE)
   }
-  
-  
-  Details_Lambda_Min_RMSE_worst_fold_mu_ig_y <- Find_Get_Val_Local_Minimum_Golden(20,
-                                                                                  45,
-                                                                                  get_RMSE_worst_fold_peruser_reg_mu_ig_y,
-                                                                                  precision_min_RMSE, TRUE, TRUE)  
+  Details_Lambda_Min_RMSE_worst_fold_mu_ig_y <- Find_Get_Val_Local_Minimum_Golden(
+    20,45,
+    get_RMSE_worst_fold_peruser_reg_mu_ig_y,
+    precision_min_RMSE, TRUE, TRUE)  
   Lambda_Min_RMSE_worst_fold_mu_ig_y  <- Details_Lambda_Min_RMSE_worst_fold_mu_ig_y$Output
-  print(Lambda_Min_RMSE_worst_fold_mu_ig_y) #28.15595
 
-  #check which better
+  #check which case yielded lowest RMSE
   min(Details_Lambda_Min_RMSE_worst_fold_muigy$SearchRecord$Val) #0.8495612
   min(Details_Lambda_Min_RMSE_worst_fold_mu_ig_y$SearchRecord$Val) #0.8464639
-  
-  #incremental save
-  savecount <- save_output_data(savenum = savecount, 
-                                save_output = !load_output_data)
-  
-  #for this model having separate lambdas gives lower RMSE so the model with different lambda is added
-  #to the results
+  #' Again a separate lambda yields a lower RMSE so that model with model will
+  #' kept and added to the results
   
   #saving the information on comparing single vs lambda for regularised models
   SingleVsMultipleLambdaComp <- SingleVsMultipleLambdaComp  %>% 
@@ -2419,8 +2421,13 @@ if (load_output_data) {
       )
     )
   
-  #the trained function is get_pred_muigy_reg with the multiple lambdas obtained by minimizing the RMSE 
-  #on the worst fold and keeping user_pred_boundaries_training_set unset so it is re-extracted for each training_set
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
+  
+  #' the trained function is get_pred_muigy_reg using multiple lambdas obtained
+  #' in the minimizing process and keeping user_pred_boundaries_training_set 
+  #' unset so it is re-extracted for each training_set
   get_pred_mu_ig_y_reg_trained <- function(training_set,test_set) 
   {
     get_pred_muigy_reg(
@@ -2433,23 +2440,27 @@ if (load_output_data) {
     )
   }
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mu_ig_y_reg_trained
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mu_ig_y_reg_trained
   rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user+indgenres+releaseyear reg",
-                        as.data.frame(get_RMSE_folds(test_index_folds = test_index_folds,
-                                                     movielens_data = edx,
-                                                     get_pred_func = get_pred_mu_ig_y_reg_trained
-                                                     ))))    
+    bind_rows(bind_cols(
+      do_remove_sparse = do_remove_sparse,
+      method="movie+user+indgenres+releaseyear reg",
+      as.data.frame(get_RMSE_folds(test_index_folds = test_index_folds,
+                                   movielens_data = edx,
+                                   get_pred_func = get_pred_mu_ig_y_reg_trained
+                                   ))))    
 
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
-  ### Model: movie+user+indgenres+releaseyear reg+timestamp ####
   
-  #we predict that the rating for movie i, user u is t the sum of
-  #the following effects in that order movie effect, user effect and 
-  #date of rating effect
+  ### Model: movie+user+indgenres+releaseyear+timestam reg ####
+  
+  #' we predict that the rating for movie i, user u is the sum of the 
+  #' following effects in that order movie user genres effect, release year and
+  #' date of rating effects, each applied on the previous baseline with 
+  #' regularisation
   
   get_pred_muigyt_reg <- function(training_set,test_set,
                                   user_pred_boundaries_training_set,
@@ -2525,8 +2536,6 @@ if (load_output_data) {
     
     
     print("prediction")
-    # indgenres_relevant_test <- indgenres_relevant %>% 
-    #   filter(movieId %in% test_set$movieId)
     pred_mean_movie_user_time_peruser_reg <- test_set %>%
       select(movieId,userId,rating,genres,timestamp) %>%
       left_join(effect_movie,by="movieId") %>%
@@ -2559,7 +2568,7 @@ if (load_output_data) {
     return(pred_mean_movie_user_time_peruser_reg)
   }
   
-  #single lambda applied to movie user and genres
+  #' Case 1 Unique lambda: l_m = l_u = l_g = l_y = l_t
   get_RMSE_worst_fold_muigyt_reg <- function(l) {
     OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
                         get_pred_muigyt_reg(
@@ -2574,40 +2583,42 @@ if (load_output_data) {
                         ))
     return(OutRMSE)
   }
-  Details_Lambda_Min_RMSE_worst_fold_muigyt <- Find_Get_Val_Local_Minimum_Golden(0,45,get_RMSE_worst_fold_muigyt_reg ,1e-06,TRUE,TRUE,3)  
-  Lambda_Min_RMSE_worst_fold_muigyt   <- Details_Lambda_Min_RMSE_worst_fold_muigyt$Output
-  print(Lambda_Min_RMSE_worst_fold_muigyt) #14.45458
+  Details_Lambda_Min_RMSE_worst_fold_muigyt <- Find_Get_Val_Local_Minimum_Golden(
+    0,45,
+    get_RMSE_worst_fold_muigyt_reg,
+    precision_min_RMSE,TRUE,TRUE)  
 
-  #get separate lambda for time stamp
+  #' Case 2: Incremental Lambda
+  #' we use previous results and apply the new effect as a separate lambda.
   get_RMSE_worst_fold_peruser_reg_mu_ig_y_t <- function(l) {
     training_set <- edx[-test_index_folds[[worst_fold_best_method]],c(1,2,3,4,5,6)]
     test_set <- edx[test_index_folds[[worst_fold_best_method]],c(1,2,3,4,5,6)]
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_muigyt_reg(
-                          training_set = edx[-test_index_folds[[worst_fold_best_method]],],
-                          test_set= edx[test_index_folds[[worst_fold_best_method]]],
-                          user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                          l_m = Lambda_Min_RMSE_worst_fold_mu,
-                          l_u = Lambda_Min_RMSE_worst_fold_mu,
-                          l_g = Lambda_Min_RMSE_worst_fold_mu_ig,
-                          l_y = Lambda_Min_RMSE_worst_fold_mu_ig_y,
-                          l_t = l
-                        ))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_muigyt_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],],
+        test_set= edx[test_index_folds[[worst_fold_best_method]]],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = Lambda_Min_RMSE_worst_fold_mu,
+        l_u = Lambda_Min_RMSE_worst_fold_mu,
+        l_g = Lambda_Min_RMSE_worst_fold_mu_ig,
+        l_y = Lambda_Min_RMSE_worst_fold_mu_ig_y,
+        l_t = l
+        ))
     return(OutRMSE)
   }
   
-  
-  Details_Lambda_Min_RMSE_worst_fold_mu_ig_y_t <- Find_Get_Val_Local_Minimum_Golden(0,
-                                                                                    45,
-                                                                                    get_RMSE_worst_fold_peruser_reg_mu_ig_y_t,
-                                                                                    precision_min_RMSE, TRUE, TRUE)  
+  Details_Lambda_Min_RMSE_worst_fold_mu_ig_y_t <- Find_Get_Val_Local_Minimum_Golden(
+    0,45,
+    get_RMSE_worst_fold_peruser_reg_mu_ig_y_t,
+    precision_min_RMSE, TRUE, TRUE)  
   Lambda_Min_RMSE_worst_fold_mu_ig_y_t  <- Details_Lambda_Min_RMSE_worst_fold_mu_ig_y_t$Output
-  print(Lambda_Min_RMSE_worst_fold_mu_ig_y_t) #15.63859
   
   #comparison single and multiple lambda
   min(Details_Lambda_Min_RMSE_worst_fold_muigyt$SearchRecord$Val) #0.8437321
   min(Details_Lambda_Min_RMSE_worst_fold_mu_ig_y_t$SearchRecord$Val) #0.8402347
-  #results are better using multiple lambdas so this will be kept and added to the results
+  #' results are better using multiple lambdas so this will be kept and added 
+  #' to the results
   
   #saving the information on comparing single vs lambda for regularised models
   SingleVsMultipleLambdaComp <- SingleVsMultipleLambdaComp  %>% 
@@ -2618,8 +2629,13 @@ if (load_output_data) {
       )
     )
   
-  #the trained function is get_pred_muigyt_reg with the multiple lambdas obtained by minimizing the RMSE 
-  #on the worst fold and keeping user_pred_boundaries_training_set unset so it is re-extracted for each training_set
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
+  
+  #' the trained function is get_pred_muigy_reg using multiple lambdas obtained
+  #' in the minimizing process and keeping user_pred_boundaries_training_set 
+  #' unset so it is re-extracted for each training_set
   get_pred_mu_ig_y_t_reg_trained <- function(training_set,test_set) 
   {
     get_pred_muigyt_reg(
@@ -2632,26 +2648,27 @@ if (load_output_data) {
       l_t = Lambda_Min_RMSE_worst_fold_mu_ig_y_t
     )
   }
-  
-  #incremental save
-  savecount <- save_output_data(savenum = savecount, 
-                                save_output = !load_output_data)
-  
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mu_ig_y_t_reg_trained
+
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mu_ig_y_t_reg_trained
   rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user+indgenres+releaseyear+timestamp reg",
-                        as.data.frame(get_RMSE_folds(test_index_folds = test_index_folds,
-                                                     movielens_data = edx,
-                                                     get_pred_func = get_pred_mu_ig_y_t_reg_trained
-                                                     )))) 
+    bind_rows(bind_cols(
+      do_remove_sparse = do_remove_sparse,
+      method="movie+user+indgenres+releaseyear+timestamp reg",
+      as.data.frame(
+        get_RMSE_folds(test_index_folds = test_index_folds,
+                       movielens_data = edx,
+                       get_pred_func = get_pred_mu_ig_y_t_reg_trained
+                       )))) 
   
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
   run_output_data_end_time <- Sys.time()
   run_output_data_duration <- run_output_data_end_time - run_output_data_start_time 
-  print(run_output_data_duration) #Time difference of 5.718817 hours
+  print(run_output_data_duration) 
+  #' Time difference of 5.718817 hours indicative time to run the whole output
+  #' section from scratch
 }
 
 # SUMMARY OF RESULTS (visualisations of models RMSE performance on training data) ####
