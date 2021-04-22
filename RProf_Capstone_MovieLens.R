@@ -670,9 +670,7 @@ if (load_input_data) {
 
 # OUTPUT DATA CREATION (data exploration, prediction models training and runs)####
 # This section produces or loads the output data from the analysis
-# It will not run if you already have the Output018.RData file.
-# This section contains the explanation on how data was produced which can be found 
-# in the code and comments 
+# When sourcing the R script this section will not run if you already have the Output020.RData file.
 if (load_output_data) {
   #This will load the successive models RMSE output data, providing the same data
   # as would be produced running all the models below
@@ -752,7 +750,7 @@ if (load_output_data) {
     geom_col() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 
-  ## MODELS COMPARISON ####
+  ## PREDICTION MODELS COMPARISON ####
   #This section will generate RMSE for successive models, from scratch and contains the code
   #that has generated the Output_020.RData file.
   #Each subsection will incrementally save the output data in file Output_xxx.RData where xxx 
@@ -2531,7 +2529,7 @@ if (load_output_data) {
   print(run_output_data_duration) #Time difference of 5.718817 hours
 }
 
-# SUMMARY OF RESULTS (visualisations of models RMSE performance) ####
+# SUMMARY OF RESULTS (visualisations of models RMSE performance on training data) ####
 if (file.exists("Data/Output_021.RData")) {
   load("Data/Output_021.RData")
   savecount <- savecount + 1
@@ -2654,7 +2652,7 @@ if (file.exists("Data/Output_021.RData")) {
   )
 }
 
-# FINAL PREDICTION RMSE (applying best models to unseen data) ####
+# FINAL PREDICTION RMSE (applying best models to unseen data in validation set) ####
 if (file.exists("Data/Output_022.RData")) {
   load("Data/Output_022.RData")
   savecount <- savecount + 1
@@ -2681,7 +2679,9 @@ if (file.exists("Data/Output_022.RData")) {
   print(final_pred_RMSE)
   print(duration)
   #Time difference of 5.321855 mins
-  #0.8428221 : the target RMSE of 0.8649 is reached. 
+  #0.8428221 : the target RMSE of 0.8649 is beaten. 
+  #It is higher than the corresponding worst fold RMSE for that model (0.8402347)
+  #this makes the case for deriving a model beating the target with a significant margin.
   
   #best model with no regularisation for speed
   start_time <- Sys.time()
@@ -2693,7 +2693,11 @@ if (file.exists("Data/Output_022.RData")) {
   print(final_pred_fast_RMSE)
   print(duration_fast)
   #Time difference of 1.198538 mins, about 3 times faster
-  #0.8492771 : the target RMSE of 0.8649 is reached. 
+  #0.8492771 : the target RMSE of 0.8649 is beaten. 
+  #It is lower than the corresponding worst fold RMSE for that model (0.8514515)
+  #this makes the point that we cannot fully predict the result on the unseen data.
+  
+  
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = TRUE,
                                 objectlist <- c("final_pred_RMSE",
