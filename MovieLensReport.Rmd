@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo=FALSE,
                       fig.dim = c(11, 7),
                       fig.align='center')
 
-do_run_calc <- FALSE#set this to TRUE to run the R script
+do_run_calc <- FALSE #set this to TRUE to run the R script
 if(do_run_calc ) {
   source("RProf_Capstone_MovieLens.R")
 } else {
@@ -46,19 +46,19 @@ if(do_run_calc ) {
 
 The MovieLens data set contains the ratings given by users on movies, with additional information on the movie including their genres, title and release year.
 
-The objective of the analysis is to produce a recommendation system for movies using the MovieLens data set. This would work as follow: A given user will rate a series of movies. Then based on this information, as well as information gathered on other users ratings, the program will attempt to estimate which ratings the user would have given to movies they have not yet watched. The highest rated such unseen movies would constitute the recommendation. 
+The objective of the analysis is to produce rating prediction models that could be used towards a recommendation system for movies,  using the MovieLens data set. This would work as follow: A given user will rate a series of movies. Then based on this information, as well as information gathered on other users ratings, the model will provide a prediction for the ratings the user would have given to movies they have not yet watched. The highest rated such unseen movies would constitute the recommendation. 
 
-Therefore the objective is to build a model that provides the most accurate estimation of the ratings for movies yet unseen by a user.
+Therefore the objective is to build a model that provides the most accurate prediction of the ratings for movies yet unseen by a user.
 
 ## Data preparation and usage {#dataprep}
 
-The data set has been provided and split in a training set (90% of the data) and validation set (10% of the data) without overlap. The validation set was then modified to contain only users and movies which are in the training set. The data removed to ensure this, was then added back to the training set. 
+The data set provided was split in a training set (90% of the data) colloquially named *edx* set and *validation* set (10% of the data) without overlap. The *validation* set was then modified to contain only users and movies which are in the training set. The data removed to ensure this, was then added back to the training set. 
 
 The validation set thus defined will be used to provide "unseen" data in the sense defined in the General Objectives.
 
-Using the training data, a prediction system will be evaluated and tuned. For the purpose of making choices of model type and settings to best predict ratings, an iterative process will be used comparing results obtained by predicting to actual ratings. However the validation data set will not be used to choose the best model. This is because if it was, it would result in overfitting, that is, a model that best fit the data we are considering but might not generalize well to new data. Instead, **only** the training set  will be used both for the purpose of providing tuning (training) data and providing a measure of the model performance. 
+Using the training data, a series of prediction models will be evaluated and tuned. For the purpose of making choices of model type and parameters tuning to best predict ratings, an iterative process will be used comparing predictions to actual ratings. However, the validation data set will not be used for that process. This is because if it was, it would result in overfitting, that is, a model that best fit the data we are considering but might not generalize well to new data. Instead, **only** the *edx* set will be used both for the purpose of providing training data and providing testing data to measure each model performance. 
 
-In order to be able to have real data to check the accuracy of the model on, the training set will therefore be further split in 10 randomly selected non overlapping sets. Then a subtraining set made up of 9 of the splits (or folds) will be used as actual training set, and the 10th remaining fold used to estimate the accuracy of the model. Because the 10 folds are non overlapping it is possible to repeat this step 10 times, resulting in 10 measures of the model and increasing our confidence that results obtained can be generalised to unseen data. 
+The *edx* set will therefore be further split in 10 randomly selected non overlapping folds. Then a training set will be made up of 9 of the folds, with the 10th remaining fold used as test set to estimate the accuracy of the model. Because the 10 folds are non overlapping it is possible to create 10 different [training;test] pairs, resulting in 10 measures of the model and increasing our confidence that results obtained can be generalised to unseen data. 
 
 ## Measuring the Model accuracy (RMSE)
 
@@ -66,9 +66,9 @@ The metric used to do that accuracy measurement is the Root Mean Square Error (R
 $$RMSE =\sqrt{\frac{1}{N_{u.i}}\sum_{u,i}(\hat{r_{u,i}}-r_{u,i})^2}$$
 where $r_{u,i}$ is the actual rating for movie i, user j and $\hat{r_{u,i}}$ is the corresponding rating estimated using our recommendation system and N the number of user/movie combinations. 
 
-The smaller RMSE is, the better our recommendation system is likely to be at predicting a user rating for an unseen movie, hence at recommending movies.
+The smaller RMSE is, the better our model is likely to be at predicting a user rating for an unseen movie, hence the better our recommendation system should be.
 
-In the case of classic 10 folds cross validation, used to determine the best model, the RMSE used to do so should be the average of the RMSEs obtained for each fold. However for speed of execution we have applied a simplified method where only the "worst fold" was used to tune the model (See section [Simplified K Folds cross validation] for details). The goal of checking results over 10 tolds is to further increase the likelihood that the RMSE thus obtained be also reached on future unseen data, compared to using a single partition of the training data and corresponding RMSE.
+In the case of classic 10 folds cross validation, used to determine the best model, the RMSE used to do so should be the average of the RMSEs obtained for each fold. However for speed of execution we have applied a simplified method where only the "worst fold" was used to tune the model parameters and RMSE calculated for all folds using the same parameters (See section [Simplified K Folds cross validation] for details) . Checking results over 10 tolds allows to check the variation of RMSE between data set and validate any improvement in RMSE between models beyond what might be an artefact of the particular (training;test) set pair considerd. This further increases the likelihood that the RMSE obtained be also reached on future unseen data, compared to using a single partition of the *edx* set.
 
 ## Meeting the challenge objectives
 
@@ -80,13 +80,14 @@ The challenge sets the target RMSE to be reached on the validation set in increa
 * `r rmse_target_25` < RMSE < `r rmse_target_20` : worth 20 marks
 * RMSE < `r rmse_target_25` : worth 25 marks
 
-Since it is not possible to know whether this will be reached on the validation data set (As it is unseen data), we will consider in this study that a particular target is reached, when it is *likely* to be reached on unseen data. Practically we decide that this be the case when **all RMSE values over 10 folds are lower than the particular target**. This assumption is deemed reasonable considering that:
+Since it is not possible to know whether this will be reached on the *validation* data set (as it is unseen data), we will consider in this study that a particular target is reached, when it is *likely* to be reached on unseen data. Practically we decide that this be the case when **all RMSE values over randomly selected 10 folds are lower than the particular target with a margin**. This assumption is deemed reasonable considering that:
 
 * the validation data set was randomly generated so it is expected to behave in a similar way as the folds
 * with a condition that all folds should meet the target, we should have compensated for the effect of sparse data 
 * the edx set in its entirety will have more data in it so effects from sparse data for some categories should be less likely
+* adding a margin will further reduce the risk the target RMSE be exceeded on unseen data
 
-Of note that it is impossible to know for sure how the model will perform, just estimate how it will perform because it is still possible  that the validation set is so peculiar and the folds themselves so peculiar that the model does not generalize as well as could be hoped. However considering the above considerations, this should be unlikely.
+It is important to note that it is impossible to know for sure how the model will perform on the *validation* set, just estimate how it will perform because it is still possible that the *validation* set is so peculiar that the model does not generalize as well as could be hoped. However considering the above considerations and limitations, this should be unlikely.
 
 # Methods
 <!-- a methods/analysis section that explains the process and techniques used, including data cleaning, data exploration and visualization, insights gained, and your modeling approach -->
@@ -95,7 +96,7 @@ Of note that it is impossible to know for sure how the model will perform, just 
 
 ### MovieLens Data content
 
-The MovieLens data contains a total of `r nb_observations_tot` observations, which have been split as outlined in Section \ref{dataprep} into a training set named edx containing `r nb_observations_edx` observations and a validation set named validation containing `r nb_observations_validation` observations. 
+The *edx* set contains a total of `r nb_observations_tot` observations, which have been split as outlined in Section \ref{dataprep} into a training set named edx containing `r nb_observations_edx` observations and a validation set named validation containing `r nb_observations_validation` observations. 
 
 Each observation is made of `r length(edx_varnames)` variables : `r edx_varnames`.
 
@@ -103,13 +104,17 @@ There are `r nb_movies` movies and `r nb_users` users in the edx dataset.
 
 ### Ratings spread
 
-In Figure \ref{fig:ratings-spread}, one can see that the most given ratings is 4, and that whole star ratings are more common than half star ones.  It also shows that there are no actual ratings above 5 or below 0.5 which therefore appears to be inherent to the grading interface. It would therefore logically imply that any prediction that states a value below 0.5 (resp  greater than 5) will be improved by rounding up (resp down) to 0.5 (resp 5), and so this effect will be included in the prediction models. 
+In Figure \ref{fig:ratings-spread}, one can see that the most given ratings is 4, and that whole star ratings are more common than half star ones.  
+
+It also shows that there are no actual ratings above 5 or below 0.5 which therefore appears to be inherent to the grading interface. It implies that any prediction that states a value below 0.5 (resp  greater than 5) will be improved by rounding up (resp down) to 0.5 (resp 5), and so this adjustment should be included in the prediction models. 
+
+We also see that the range of possible values for actual ratings is *[`r seq(0.5,5,0.5)`]*. It would therefore be of value to consider whether rounding predictions to the nearest allowed actual rating would improve results on average. This would likely greatly depend on the accuracy of the prediction on average.
 
 ```{r ratings-spread, fig.cap = "Ratings Spread"}
 print(p_ratings_spread)
 ```
 
-Furthermore, it is interesting to consider what the boundaries (minimum and maximum rating) for individual users. This is because if a given user has never given a rating below 2 for instance, it is likely that it will not happen for a new rating by that user. That is, it is likely that for that particular user, a rating of 2 is the minimum it will give to a movie they do not like. This similarly goes for the high ratings. It would be interested to see the effect of extracting the minimum and maximum ratings for each individual users and apply this as boundaries for a prediction of an unseen movie for that user, that is, if the prediction falls within that user's boundaries so far, keep the prediction, and if the prediction is greater (resp lower) than the top (resp bottom) boundary, change the prediction to the top (resp bottom) boundary for that user. 
+Furthermore, it is interesting to consider what the boundaries (minimum and maximum rating) for individual users. This is because if a given user has never given a rating below 2 for instance, it is likely that it will not happen for a new rating by that user. That is, it is likely that for that particular user, a rating of 2 is the minimum it will give to a movie they do not like. This similarly goes for the high ratings. It would be interesting to see whether adjusting for those minimum and maximum ratings for each individual users treating them effectively as new lower and upper boundaries improves predictions on average. 
 
 ### Genres spread
 
@@ -657,24 +662,31 @@ The advantage is that each further step in the search only requires a single RMS
 ### Search method comparison
 
 ```{r label = Search-Method-Comparison, fig.cap = "Search Method Comparison"}
-ggplot(Comp_SearchMethods%>% filter(Category  == "Extensive_Search"), aes(Lambda, RMSE,colour = Category ,shape = Category )) + 
-    geom_line() +
-    geom_point(size = 1) +
-    geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search"),size = 2,stroke = 2)+
+# ggplot(Comp_SearchMethods%>% filter(Category  == "Extensive_Search"), aes(Lambda, RMSE,colour = Category ,shape = Category )) + 
+#     geom_line() +
+#     geom_point(size = 1) +
+#     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search"),size = 2,stroke = 2)+
+#     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Golden_Section_Minimum"),size = 2,stroke = 2)+
+#     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Extensive_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Extensive_Minimum"),size = 2,stroke = 2)
+
+  ggplot(Comp_SearchMethods%>% filter(Category  == "Extensive_Search"), 
+         aes(Lambda, RMSE,colour = Category ,shape = Category )) + 
+    #geom_line() +
+    geom_point(size = 1, stroke =1) +
+    geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search"),size = 1,stroke = 2)+
     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Golden_Section_Minimum"),size = 2,stroke = 2)+
     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Extensive_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Extensive_Minimum"),size = 2,stroke = 2)
+  
 
 ```
 
-In figure \ref{fig:Search-Method-Comparison} the advantage of using the Golden Section search is quite clear since with only *`r length(unique(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$X))`* RMSE function evaluations we do reach a minimum RMSE of *`r min(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$Val)`* which is virtually identical to the one found for the Extensive Search method (*`r RMSE_movie_systematic`*), while that latter method requires *`r nrow(RMSE_movie_extensive_minimum_search)`* RMSE function evaluations.
-
-
+In figure \ref{fig:Search-Method-Comparison} the advantage of using the Golden Section search is quite clear since with only *`r length(unique(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$X))`* RMSE function evaluations we do reach a minimum RMSE of *`r min(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$Val)`* which is virtually identical to the one found for the Extensive Search method (*`r RMSE_movie_systematic`*), while that latter method requires *`r nrow(RMSE_movie_extensive_minimum_search)`* RMSE function evaluations (*`r round((nrow(RMSE_movie_extensive_minimum_search))/(length(unique(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$X))),2)`* as many evaluations).
 
 ### Golden Section Search Limitations : search interval
 
-One can see from the definition of the method that for it to progress it requires the values at XLeft and XRight to be such that there is a minimum found at step number 1 of the search. But this might not be the case, depending on the search interval chosen! Figure \ref{fig:p-LargerInterval-SearchRecordComparison} below is an example of such a case, using the *movie reg* model. By choosing the search interval to be *[0-20]* step 1 picks values of lambda which do not show a minimum. 
+One can see from the definition of the method that for it to progress it requires the values at XLeft and XRight to be such that there is a minimum found at step number 1 of the search. But this might not be the case, depending on the search interval chosen! Figure \ref{fig:p-LargerInterval-SearchRecordComparison} below is an example of such a case, using the *movie reg* model. By choosing the search interval to be *[0-50]* step 1 picks values of lambda which do not show a minimum. 
 
-To alleviate this issue, the function was improved to allow for further attempts finding a minimum in case of initial failure. If a function is found to be absolutely increasing at step 1, then further attempt is made to find a minimum between XMin and XLeft, since this is the only interval where such a minimum will be if it exists. It is then possible to find the minimum even if the initial interval chosen is quite large provided that enough attempts are made. Figure \ref{fig:p-LargerInterval-SearchRecordComparison} below shows an example where a single extra attempt was enough to find the minimum. 
+To alleviate this issue, the function was improved to allow for further attempts finding a minimum in case of initial failure. If a function is found to be absolutely increasing at step 1, then further attempt is made to find a minimum between XMin and XLeft, since this is the only interval where such a minimum will be if it exists. It is then possible to find the minimum even if the initial interval chosen is quite large provided that enough attempts are made. Figure \ref{fig:p-LargerInterval-SearchRecordComparison} below shows that allowing two further such attempts results in finding the minimum. 
 
 \newpage
 \blandscape

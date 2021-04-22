@@ -238,7 +238,7 @@ get_userboundaries_trainingset <- function(training_set) {
 #Minimising X value or Dataframe with search steps (depending on with_details input value)
 Find_Get_Val_Local_Minimum_Golden <- function(X_Min,X_Max,
                                               Get_Val,Precision,verbose = TRUE,with_details = FALSE,
-                                              max_Nb_Attempt = 1,PrecisionType = "Val") {
+                                              max_Nb_Attempt = 3,PrecisionType = "Val") {
   
   failed_Attempt_Nb <- 0
   
@@ -525,7 +525,7 @@ save_output_data <- function(savenum,save_output,objectlist) {
 # or will be calculated from scratch. 
 # We differentiate between Input Data, which is the data from movielens, 
 # without further analysis just arranged in a usable way; and Output Data 
-# which is the data produced from the analysis typically the models run and 
+# which is the data produced from manipulating the data typically the models run and 
 # corresponding RMSE results. 
 
 # Even if the option to load the data is chosen, it is advised to read through 
@@ -536,6 +536,11 @@ save_output_data <- function(savenum,save_output,objectlist) {
 # will be recreated. You can hard set load_input_data and load_output_data so the code
 # will run even if the RData files are available. 
 
+# By cloning the repository you should get the 3 output data files Output_020.RData, Output_021.RData and Output_022.RData 
+# which will contain the results of the code in the output section. The objects produced by the input section were not added
+# to the repository as they are quite large. However, after running this script once the Input data will be saved in a RData file
+# which will be loaded at the next re-run.
+
 #input data loaded if available
 load_input_data <- file.exists("Data/Input.RData") 
 #output data loaded if available
@@ -544,7 +549,7 @@ load_output_data <- file.exists("Data/Output_020.RData")
 savecount <- 1
 savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save 
 
-# INPUT DATA CREATION (data set creation and cleaning)####
+# INPUT DATA CREATION (data sets creation and cleaning)####
 # This section produces or loads the input data to the analysis 
 if (load_input_data) {
   # load input data from RData file (if it was generated in a previous run)
@@ -591,7 +596,7 @@ if (load_input_data) {
                                            remove_sparse = do_remove_sparse) 
   
   savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
-  ## DATA CLEANING AND METHODS####
+  ## DATA CLEANING ####
   ### Individual genres extraction ####
   
   #the genres field is a string made of the concatenation of individual genres
@@ -656,28 +661,6 @@ if (load_input_data) {
     unique() %>%
     mutate(time_rating = as.character(round_date(as_datetime(timestamp),"day")))
   
-  ### Regularisation implementation####
-  #We consider the effect of regularisation to the model. In order to increase how much the model extends to unseen data, it is important
-  #not to overfit the model the training data. This can happen when considering effects for categories with a small number of observations 
-  #and extreme values. By penalising groups with a small number of observations it is possible to limit that effect. 
-  #Without outlining in details the maths, the model is modified by considering not the simple average of the deviation of the rating compared
-  # to the current model, but the deviation of the absolute sum of the deviations divided by the number of observation n plus a penalty parameter
-  # lambda. For lambda = 0, we are back to the non regularised model. When lambda is non null, the categories with a small n
-  # will have their effect penalised. For categories with a large n, the effect of lambda will be smaller, and the contribution will be mostly
-  # unchanged. 
-  
-  #The RMSE function of lambda is expected to reach a minimum for the optimal lambda. In order to obtain that value, 
-  #several methods are possible. 
-  #One could pick lambda values in a range for which RMSE is calculated, and the lambda for which the smallest value is reached
-  #is kept. This however requires trial and error to reach the desired value and precision. 
-  #Instead, in order to reach the desired precision in a more automated way, a function was written to find the minimum. See "FUNCTIONS DEFINITION"
-  #above, function "Find_Get_Val_Local_Minimum_Golden" 
-  
-  #Furthermore instead of calculating a lambda for each of the folds, we only determine a lambda for the "worst fold" that is the fold that gives
-  # the highest RMSE before regularisation. This choice is because all other aspects being equal, the requirement for regularisation would explain
-  # partly the higher RMSE for the worst fold, therefore it appears conservative that this be used to determine a lambda to be used in the final model.
-  # one could also determine the optimum lambda for each fold and then an average be used however because the determination of the optimum lambda is 
-  #computationally expensive, a single determination was used. 
   run_input_data_end_time <- Sys.time()
   run_input_data_duration <- run_input_data_end_time - run_input_data_start_time 
   print(run_input_data_duration) #Time difference of 
@@ -1277,8 +1260,7 @@ if (load_output_data) {
   savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
 
   ### Model: movie regularised ####
-  
-  #we apply regularisation to the movie only model, using the parameter l_m (movie effet lambda) to 
+  #we apply regularisation (see report for details) to the movie only model, using the parameter l_m (movie effet lambda) to 
   #penalise movies with a small number of ratings and improve how well the model generalise to new data
   #prediction function
   get_pred_m_reg <- function(training_set,
@@ -1338,9 +1320,9 @@ if (load_output_data) {
     return(OutRMSE)
   }
   
+  #precision to which RMSE minimum is considered reached in the minimum finding function, chosen based on the target
+  #RMSEs having 5 significant digits provided.
   precision_min_RMSE <-  1e-06 
-  #precision to which RMSE minimum is considered reached, chosen based on the target
-  #RMSE having precision of 1e-5
   
   #The lambda minimising this function is found by applying the minimum finding function to our worst fold RMSE function.
   #Here we search between lambda = 0 and lambda = 10, with a precision on RMSE of precision_min_RMSE.
@@ -1348,37 +1330,42 @@ if (load_output_data) {
   Details_Lambda_Min_RMSE_worst_fold_m <- Find_Get_Val_Local_Minimum_Golden(0,10,
                                                                             get_RMSE_worst_fold_m_reg_lm, 
                                                                             precision_min_RMSE,TRUE,TRUE) 
-  #promise already under evaluation: recursive default argument reference or earlier problems? 
-  #or
-  # Error in Get_Progress_Check() : object 'X_Right' not found 
-  #the number of function evaluation to find minimum with precision_min_RMSE precision
-  nb_eval <- length(unique(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$X)) 
-  print(nb_eval) 
-  #6 evaluations only, proving the benefit of the method for finding minimum indeed the closest would have been 
-  #2.4 which if evaluated between 0 and 10 by increments of 0.1 would have required a minimum of 25 evaluations (if
-  #stopping at the point where the function starts increasing again) and at maximum 100 evaluations, to reach a similar
-  #result with slightly less precision. 
+
+  #Number of function evaluation to find minimum with precision_min_RMSE precision:
+  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$X))) 
+  #6 evaluations only
   RMSE_movie_reg <- min(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$Val)
+  print(RMSE_movie_reg)
+  #0.9435073
 
   #Systematic Lambda Search
+  #we vary lambda starting with 0 until 10 by increments of 0.1, stopping when we find a RMSE value
+  #greater than the previous lambda RMSE value
   RMSE_movie_extensive_minimum_search <- data.frame()
+  Last_RMSE_m_search <- Inf
   for (lambda in seq(0,10,0.1)) {
+    RMSE_m_search <- get_RMSE_worst_fold_m_reg_lm(lambda)
+    if(RMSE_m_search > Last_RMSE_m_search) {break} #new RMSE greater than previous, exiting the loop
     RMSE_movie_extensive_minimum_search <- RMSE_movie_extensive_minimum_search %>%
-      bind_rows(data.frame(Lambda = lambda, RMSE = get_RMSE_worst_fold_m_reg_lm(lambda)))
+      bind_rows(data.frame(Lambda = lambda, RMSE = RMSE_m_search))
+    Last_RMSE_m_search <- RMSE_m_search #saving previous RMSE value
   }
-  #Visualisations of systematic lambda search
+  #Number of function evaluation to find minimum :
+  print(nrow(RMSE_movie_extensive_minimum_search)) 
+  #20 evaluations, 3 times more than Golden Section method
+  
+  RMSE_movie_systematic <- min(RMSE_movie_extensive_minimum_search$RMSE)
+  print(RMSE_movie_systematic)
+  #0.9435059 which confirms there was no loss in precision
+  
+  #Visualisation of systematic lambda search
   RMSE_movie_extensive_minimum_search %>%
     ggplot(aes(Lambda, RMSE)) +
     geom_line() #+ geom_point()
-  
-  Lambda_Min_RMSE_worst_fold_m_systematic <- RMSE_movie_extensive_minimum_search %>% 
-    filter(RMSE == min(RMSE)) %>%
-    pull(Lambda)
-  
-  RMSE_movie_systematic <- min(RMSE_movie_extensive_minimum_search$RMSE)
-  
+
   Comp_SearchMethods <- Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord %>%
     select(X,Val) %>%
+    unique() %>%
     rename(Lambda = X, RMSE = Val) %>%
     mutate(Category = "Golden_Section_Search") %>%
     bind_rows(data.frame(RMSE_movie_extensive_minimum_search,Category  = "Extensive_Search"))
@@ -1387,14 +1374,15 @@ if (load_output_data) {
     ggplot(aes(Lambda, RMSE,colour = Category )) +
     geom_line(size = 1) + geom_point()
   
-  ggplot(Comp_SearchMethods%>% filter(Category  == "Extensive_Search"), aes(Lambda, RMSE,colour = Category ,shape = Category )) + 
-    geom_line() +
-    geom_point(size = 1) +
-    geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search"),size = 2,stroke = 2)+
+  ggplot(Comp_SearchMethods%>% filter(Category  == "Extensive_Search"), 
+         aes(Lambda, RMSE,colour = Category ,shape = Category )) + 
+    #geom_line() +
+    geom_point(size = 1, stroke =1) +
+    geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search"),size = 1,stroke = 2)+
     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Golden_Section_Minimum"),size = 2,stroke = 2)+
     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Extensive_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Extensive_Minimum"),size = 2,stroke = 2)
   
-  #Visualisations of lambda search
+  #Visualisations of golden section lambda search
   #search steps visualisations - using facets
   Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord %>%
     mutate(step = as.character(step)) %>%
@@ -1428,19 +1416,26 @@ if (load_output_data) {
   #attempt to find a minimum between the the first two locations. 
   
   #one attempt only, minimum missed
-  Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalMISSED <- Find_Get_Val_Local_Minimum_Golden(0,20,
+  Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalONEATTEMPTMISSED <- Find_Get_Val_Local_Minimum_Golden(0,50,
                                                                                                  get_RMSE_worst_fold_m_reg_lm,
-                                                                                                 precision_min_RMSE,TRUE,TRUE) 
+                                                                                                 precision_min_RMSE,TRUE,TRUE,
+                                                                                                 max_Nb_Attempt = 1) 
+  
+  Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalTWOATTEMPTSMISSED <- Find_Get_Val_Local_Minimum_Golden(0,50,
+                                                                                                           get_RMSE_worst_fold_m_reg_lm,
+                                                                                                           precision_min_RMSE,TRUE,TRUE,
+                                                                                                           max_Nb_Attempt = 2) 
   
   #2 attempts allowed, the minimum is found between the initial two first values
-  Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalFOUND <- Find_Get_Val_Local_Minimum_Golden(0,20,
+  Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalTHREEATTEMPTSFOUND <- Find_Get_Val_Local_Minimum_Golden(0,50,
                                                                                                 get_RMSE_worst_fold_m_reg_lm,
                                                                                                 precision_min_RMSE,TRUE,TRUE,
-                                                                                                max_Nb_Attempt = 2)
+                                                                                                max_Nb_Attempt = 3)
   
   LargerInterval_SearchRecordComparison <- bind_rows(
-    Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalMISSED$SearchRecord %>% mutate(case = "max_Nb_Attempt =1, Minimum Missed"),
-    Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalFOUND$SearchRecord %>% mutate(case = "max_Nb_Attempt =2, Minimum Found"))
+    Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalONEATTEMPTMISSED$SearchRecord %>% mutate(case = "max_Nb_Attempt =1, Minimum Missed"),
+    Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalTWOATTEMPTSMISSED$SearchRecord %>% mutate(case = "max_Nb_Attempt =2, Minimum Missed"),
+    Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalTHREEATTEMPTSFOUND$SearchRecord %>% mutate(case = "max_Nb_Attempt =3, Minimum Found"))
   
   #Comparing the two cases
   p_LargerInterval_SearchRecordComparison <-  LargerInterval_SearchRecordComparison %>% 
