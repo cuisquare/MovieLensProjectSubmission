@@ -549,8 +549,8 @@ save_output_data <- function(savenum,save_output,objectlist) {
 #input data loaded if available
 load_input_data <- file.exists("Data/Input.RData") 
 #output data loaded if available
-#'This tells us that the whole of the run in section "OUTPUT DATA CREATION" 
-#'is available and ready to be loaded
+#' This tells us that the whole of the run in section "OUTPUT DATA CREATION" 
+#' is available and ready to be loaded
 load_output_data <- file.exists("Data/Output_020.RData") 
 savecount <- 1
 #incremental save
@@ -563,9 +563,9 @@ if (load_input_data) {
   # load input data from RData file
   load("Data/Input.RData")
 } else {
-  #'this section creates input data from scratch and contains the code used 
-  #'to generate the data in the Input.RData file. 
-  #'it should run in an indicative duration of 4.456573 mins
+  #' this section creates input data from scratch and contains the code used 
+  #' to generate the data in the Input.RData file. 
+  #' it should run in an indicative duration of 4.456573 mins
   ## DATA SETS CREATION ####
   run_input_data_start_time <- Sys.time()
   
@@ -582,13 +582,13 @@ if (load_input_data) {
     save(movielens,file="movielens.RData")
   }
   
-  #'Extracting training set ('edx') and test set ('validation') dataframes using
-  #'the function extract_edx_validation previously defined with remove_sparse 
-  #'TRUE so the validation dataframe will not contain ratings for movies or 
-  #'users which are not present in the edx data frame
+  #' Extracting training set ('edx') and test set ('validation') dataframes using
+  #' the function extract_edx_validation previously defined with remove_sparse 
+  #' TRUE so the validation dataframe will not contain ratings for movies or 
+  #' users which are not present in the edx data frame
   set.seed(1, sample.kind="Rounding")
-  #'createMovieLensDataPartition returns a named list containing edx and 
-  #'validation dataframes
+  #' createMovieLensDataPartition returns a named list containing edx and 
+  #' validation dataframes
   temp <- createMovieLensDataPartition(movielens_data = movielens,
                                        p= 0.1,
                                        remove_sparse = TRUE)
@@ -607,8 +607,8 @@ if (load_input_data) {
   savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
   ## DATA CLEANING ####
   ### Individual genres extraction ####
-  #'we create the full list of genres for the edx data set, to speed up 
-  #'model training as this part of the computation is a constant
+  #' we create the full list of genres for the edx data set, to speed up 
+  #' model training as this part of the computation is a constant
   #the genres field is a string made of the concatenation of individual genres
   #separated by the symbol "|"
   gc()
@@ -725,8 +725,8 @@ if (load_output_data) {
     ungroup() %>%
     group_by(whole_rating_type) %>%
     summarise(nb_of_type = n()) 
-  #'44763 users give only whole rating, 25109 with mix and 6 
-  #'only with exclusive partial rating
+  #' 44763 users give only whole rating, 25109 with mix and 6 
+  #' only with exclusive partial rating
   
   preferenceraters_spread <- wholeratingperc_spread  %>%
     group_by(userId) %>%
@@ -739,8 +739,8 @@ if (load_output_data) {
     ungroup() %>%
     group_by(rating_preference) %>%
     summarise(nb_of_type = n()) 
-  #'65084 users give whole rating more often than not, 4794 only give partial
-  #'rating more often than not
+  #' 65084 users give whole rating more often than not, 4794 only give partial
+  #' rating more often than not
   
   p_indgenres_spread <- indgenres_movie_summary %>%
     ungroup() %>%
@@ -768,8 +768,8 @@ if (load_output_data) {
   
   ### Model: naive average ####
   
-  #'we predict that each new rating is the average of the ratings for all 
-  #'previously rated movies by all users
+  #' we predict that each new rating is the average of the ratings for all 
+  #' previously rated movies by all users
   get_pred_mean <- function(training_set,test_set) {
     return(mean(training_set$rating))
   }
@@ -779,8 +779,8 @@ if (load_output_data) {
     rmse_folds_results <- data.frame()
   }
   
-  #'add• the results by applying get_RMSE_folds with 
-  #'get_pred_func = get_pred_mean
+  #' add• the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mean
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="average",
@@ -792,11 +792,11 @@ if (load_output_data) {
                                 save_output = !load_output_data) 
   ### Model: average by user ####
   
-  #'we predict that each new rating for a given user is the average of the 
-  #'ratings for all previously rated movies by that same user practically we 
-  #'calculate the average deviation (or effect) of rating for each user, then 
-  #'predict the overall average plus that effect will be that user rating for 
-  #'each new movie
+  #' we predict that each new rating for a given user is the average of the 
+  #' ratings for all previously rated movies by that same user practically we 
+  #' calculate the average deviation (or effect) of rating for each user, then 
+  #' predict the overall average plus that effect will be that user rating for 
+  #' each new movie
   get_pred_user <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_user <- training_set %>%
@@ -819,8 +819,8 @@ if (load_output_data) {
                        verbose = TRUE)
   #RMSE = 0.979776212801374 for worst fold =  Fold01
   
-  #'adding the results by applying get_RMSE_folds with 
-  #'get_pred_func = get_pred_mean_user
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mean_user
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="user",
@@ -834,10 +834,10 @@ if (load_output_data) {
   
   ### Model: average by movie ####
   
-  #'we predict that each new rating for a given movie is the average of the 
-  #'ratings for that same movie by all other users practically we calculate the 
-  #'average deviation (or effect) of rating for each movie, then predict the 
-  #'overall average plus that effect will be that movie rating for each new user
+  #' we predict that each new rating for a given movie is the average of the 
+  #' ratings for that same movie by all other users practically we calculate the 
+  #' average deviation (or effect) of rating for each movie, then predict the 
+  #' overall average plus that effect will be that movie rating for each new user
   get_pred_movie <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_movie <- training_set %>%
@@ -852,9 +852,9 @@ if (load_output_data) {
     return(pred_mean_movie)
   }
   
-  #'To conservatively evaluate the new model, we get the RMSE of that model 
-  #'applied on the fold that gave the highest RMSE using the best model 
-  #'(lowest average RMSE) considered before that new model RMSE on worst fold
+  #' To conservatively evaluate the new model, we get the RMSE of that model 
+  #' applied on the fold that gave the highest RMSE using the best model 
+  #' (lowest average RMSE) considered before that new model RMSE on worst fold
   RMSE_movie <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
                        test_index_folds = test_index_folds,
                        movielens_data = edx,
@@ -864,27 +864,27 @@ if (load_output_data) {
   
   ### Model: average by movie, with Rounding to nearest allowed value ####
 
-  #'We saw in the data exploration section that only possible ratings are 
+  #' We saw in the data exploration section that only possible ratings are 
   #' in the [0.5-5] range 'in increments of 0.5. We explore whether there is an 
   #' improvement by rounding predictions to the nearest allowed value.
   
-  #'We use the wholeratingperc_spread derived in the data exploration section 
-  #'but applying the extraction to the training_set as it is the only known 
-  #'data. Then if a user has more whole rating given than a set minimum 
-  #'percentage provided as function parameter min_perc_whole_rating then 
-  #'rounding to nearest whole rating is applied. By setting 
-  #'min_perc_whole_rating to 1.0 for instance,we can apply nearest whole rating 
-  #'rounding only to users that have so far only given whole ratings.
+  #' We use the wholeratingperc_spread derived in the data exploration section 
+  #' but applying the extraction to the training_set as it is the only known 
+  #' data. Then if a user has more whole rating given than a set minimum 
+  #' percentage provided as function parameter min_perc_whole_rating then 
+  #' rounding to nearest whole rating is applied. By setting 
+  #' min_perc_whole_rating to 1.0 for instance,we can apply nearest whole rating 
+  #' rounding only to users that have so far only given whole ratings.
   
-  #'We also place a further control that such a rounding should only occur if 
-  #'the difference between the initial prediction to the nearest whole rating is
-  #'lower than parameter max_diff_pred_whole provided as input to the function. 
-  #'This allows for instance if set to 0.1 to only round to nearest whole rating
-  #'the predicitions which are quite close to a whole rating (while setting to 
-  #'0.5 would result in all non whole predictions to be rounded). the latest 
-  #'parameter round_val allows to choose to which nearest increment to round. 
-  #'If set to 1, if will round to nearest whole rating, for instance but could
-  #'be set to 0.5 to round to nearest half rating.
+  #' We also place a further control that such a rounding should only occur if 
+  #' the difference between the initial prediction to the nearest whole rating is
+  #' lower than parameter max_diff_pred_whole provided as input to the function. 
+  #' This allows for instance if set to 0.1 to only round to nearest whole rating
+  #' the predicitions which are quite close to a whole rating (while setting to 
+  #' 0.5 would result in all non whole predictions to be rounded). the latest 
+  #' parameter round_val allows to choose to which nearest increment to round. 
+  #' If set to 1, if will round to nearest whole rating, for instance but could
+  #' be set to 0.5 to round to nearest half rating.
   get_pred_mean_movie_rounded_mpwr_mdpw <- function(training_set,test_set,
                                           min_perc_whole_rating = 1.0,
                                           max_diff_pred_whole = 0.5,
@@ -912,10 +912,10 @@ if (load_output_data) {
     return(pred_mean_movie)
   }
   
-  #'we set the model with min_perc_whole_rating = 1.0,  
-  #'max_diff_pred_whole = 0.1, and round_val = 1.0 that is, rounding  to the 
-  #'nearest whole rating,only for users who only gave whole ratings so far, and 
-  #'only if the prediction is within 0.1 of a whole rating. 
+  #' we set the model with min_perc_whole_rating = 1.0,  
+  #' max_diff_pred_whole = 0.1, and round_val = 1.0 that is, rounding  to the 
+  #' nearest whole rating,only for users who only gave whole ratings so far, and 
+  #' only if the prediction is within 0.1 of a whole rating. 
   get_pred_mean_movie_rounded <- function(training_set,test_set) {
     return(get_pred_mean_movie_rounded_mpwr_mdpw(training_set,test_set,
                                                  min_perc_whole_rating = 1.0,
@@ -931,14 +931,14 @@ if (load_output_data) {
                        verbose = TRUE)
   #RMSE = 0.944882070377347 for worst fold =  Fold01
   
-  #'we observe that Rounding does NOT improve results (result without rounding 
-  #'was 0.9446996), even in the conservative case considered. other types of 
-  #'systematic rounding were considered (rounding to nearest 0.5, other distance
-  #'from nearest allowed value) which also did not improve results. 
+  #' we observe that Rounding does NOT improve results (result without rounding 
+  #' was 0.9446996), even in the conservative case considered. other types of 
+  #' systematic rounding were considered (rounding to nearest 0.5, other distance
+  #' from nearest allowed value) which also did not improve results. 
   
   
-  #'we can try to see why there was no improvement overall, by looking at which 
-  #'predictions were improved and which were not and by how much
+  #' we can try to see why there was no improvement overall, by looking at which 
+  #' predictions were improved and which were not and by how much
   worst_fold_best_method <- get_worst_fold_best_method(rmse_folds_results)
   comp_mean_movie <- data.frame(
     pred_mean_movie = get_pred_worstfold(rmse_folds_results,
@@ -972,15 +972,15 @@ if (load_output_data) {
     mutate(Dmse = mse_rounded - mse) %>%
     mutate(weighted_Dmse = count*Dmse)
   
-  #'we see that although the predictions are improved in circa 3 times more 
-  #'cases than worsened, the worsening in terms of RMSE adds up to more than
-  #'the improvement for the cases where it is improved. 
+  #' we see that although the predictions are improved in circa 3 times more 
+  #' cases than worsened, the worsening in terms of RMSE adds up to more than
+  #' the improvement for the cases where it is improved. 
   #' this can be seen looking at weighted mses for each type of change 
   #' (worse, same, better) 
   
-  #'As this model does not improve RMSE, the results will not be added to the 
-  #'rmse_folds_results dataframe and we will NOT apply systematic rounding 
-  #'in the models going forward.
+  #' As this model does not improve RMSE, the results will not be added to the 
+  #' rmse_folds_results dataframe and we will NOT apply systematic rounding 
+  #' in the models going forward.
 
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
@@ -988,12 +988,12 @@ if (load_output_data) {
   
   ### Model: average by movie, with User Boundary Rounding ####
   
-  #'By looking at the minimum and maximum rating given so far by each user, we 
-  #'apply a simple rule that if a prediction is lower (resp higher) than the 
-  #'lowest (resp higher) rating given so far by the user, that lower boundary 
-  #'is predicted instead. This is based on the assumption that each user will 
-  #'have their idea of what is a maximum and minimum rating, keeping to this 
-  #'rather than the full range.
+  #' By looking at the minimum and maximum rating given so far by each user, we 
+  #' apply a simple rule that if a prediction is lower (resp higher) than the 
+  #' lowest (resp higher) rating given so far by the user, that lower boundary 
+  #' is predicted instead. This is based on the assumption that each user will 
+  #' have their idea of what is a maximum and minimum rating, keeping to this 
+  #' rather than the full range.
   get_pred_mean_movie_rub <- function(training_set,test_set) {
     
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
@@ -1027,14 +1027,14 @@ if (load_output_data) {
                        get_pred_func = get_pred_mean_movie_rub,
                        verbose = TRUE)
   #RMSE = 0.943558937204152 for worst fold =  Fold01
-  #'user based boundary rounding DOES improve results (result without rounding 
-  #'was 0.9446996).
-  #'Therefore, in all further models, we will apply user boundaries rounding. 
-  #'For conciseness we will not specify it in model descriptions.
+  #' user based boundary rounding DOES improve results (result without rounding 
+  #' was 0.9446996).
+  #' Therefore, in all further models, we will apply user boundaries rounding. 
+  #' For conciseness we will not specify it in model descriptions.
   
     
-  #'adding the results by applying get_RMSE_folds with 
-  #'get_pred_func = get_pred_mean_movie_rub
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mean_movie_rub
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie",
@@ -1047,9 +1047,9 @@ if (load_output_data) {
                                 save_output = !load_output_data)
   ### Model: average by movie then user ####
   
-  #'we predict that the rating for movie i, user u is t the sum of the movie 
-  #'effect and the user effect as recalculated using the baseline with movie 
-  #'effect included 
+  #' we predict that the rating for movie i, user u is t the sum of the movie 
+  #' effect and the user effect as recalculated using the baseline with movie 
+  #' effect included 
   get_pred_movie_user <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_movie <- training_set %>%
@@ -1081,8 +1081,8 @@ if (load_output_data) {
   
   ### Model: average by movie then user with Global Boundary Rounding ####
   
-  #'Because there are now two effects incorporated the b_u effect can result in 
-  #'predictions outside of the possible values which as we have seen in the data
+  #' Because there are now two effects incorporated the b_u effect can result in 
+  #' predictions outside of the possible values which as we have seen in the data
   #' exploration section, is in the [0.5,5] range in increments of 0.5. This 
   #' would happen for instance if the average rating over all movies was high 
   #' then a particular user has consistently lower than average ratings. For a 
@@ -1100,12 +1100,12 @@ if (load_output_data) {
     )
   rm(pred_movie_user_worstfold)
   print(nb_pred_outofrange)
-  #'2161 predicted ratings are out of the actual possible range for ratings.
+  #' 2161 predicted ratings are out of the actual possible range for ratings.
   
-  #'To improve on this, for models with more than one effect, we can change any 
-  #'prediction that is lower then 0.5 to 0.5 and any prediction that is higher 
-  #'than 5 to 5. This should improve the overall RMSE because any prediction 
-  #'that is outside of the possible range will be improved by the operation. 
+  #' To improve on this, for models with more than one effect, we can change any 
+  #' prediction that is lower then 0.5 to 0.5 and any prediction that is higher 
+  #' than 5 to 5. This should improve the overall RMSE because any prediction 
+  #' that is outside of the possible range will be improved by the operation. 
   get_pred_movie_user_ab <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_movie <- training_set %>%
@@ -1136,16 +1136,16 @@ if (load_output_data) {
     get_pred_func = get_pred_movie_user_ab,
     verbose = TRUE)
   #RMSE = 0.866596639311349 for worst fold =  Fold01
-  #'this confirms improvement compared to the case without adjustment for 
-  #'allowed boundaries (0.8667928)
+  #' this confirms improvement compared to the case without adjustment for 
+  #' allowed boundaries (0.8667928)
   
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
   
   ### Model: average by movie then user with Global Boundary Rounding followed by User Boundary Rounding ####
-  #'we also apply user based boundaries adjustment and see if there is further 
-  #'improvement or if the two adjustments are mutually exclusive
+  #' we also apply user based boundaries adjustment and see if there is further 
+  #' improvement or if the two adjustments are mutually exclusive
   get_pred_movie_user_ab_rub <- function(training_set,test_set) {
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
     user_pred_boundaries_training_set <- get_userboundaries_trainingset(training_set)
@@ -1183,22 +1183,22 @@ if (load_output_data) {
                        get_pred_func = get_pred_movie_user_ab_rub,
                        verbose = TRUE)
   #RMSE = 0.866507592226623 for worst fold =  Fold01
-  #'further improvement by doing user based boundary adjustment compared to 
-  #'doing only allowed global boundaries adjustment (0.8665966)
+  #' further improvement by doing user based boundary adjustment compared to 
+  #' doing only allowed global boundaries adjustment (0.8665966)
   
-  #'In all models below with more than 1 effect we will therefore apply in 
-  #'succession two adjustments : overall allowed boundaries adjustment and user 
-  #'based boundary adjustment. It is clear that for users that have already 
-  #'submitted ratings, only applying the second adjustment will result in the 
-  #'same improvement since the minimum and maximum rating given by a user are 
-  #'within the allowed ranges. However this will not be the case for new users 
-  #'with no submitted ratings so far. For all models incorporating more than one
-  #'effect that is not user based, we will apply both effect. 
+  #' In all models below with more than 1 effect we will therefore apply in 
+  #' succession two adjustments : overall allowed boundaries adjustment and user 
+  #' based boundary adjustment. It is clear that for users that have already 
+  #' submitted ratings, only applying the second adjustment will result in the 
+  #' same improvement since the minimum and maximum rating given by a user are 
+  #' within the allowed ranges. However this will not be the case for new users 
+  #' with no submitted ratings so far. For all models incorporating more than one
+  #' effect that is not user based, we will apply both effect. 
   
   #Again for conciseness we will not specify it in the model description.
   
-  #'adding the results by applying get_RMSE_folds with 
-  #'get_pred_func = get_pred_mean_movie_user_ab_rub
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mean_movie_user_ab_rub
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie+user",
@@ -1212,9 +1212,9 @@ if (load_output_data) {
                                 save_output = !load_output_data)
   
   ### Model: average by movie then user then genres ####
-  #'we predict that the rating for movie i, user u is the sum of the following 
-  #'effects in that order movie effect, user effect and movie genres effect, 
-  #'each applied on the previous baseline.
+  #' we predict that the rating for movie i, user u is the sum of the following 
+  #' effects in that order movie effect, user effect and movie genres effect, 
+  #' each applied on the previous baseline.
   #we model the genres by taking directly the series of genres as a unique genre
   get_pred_movie_user_genres <- function(training_set,test_set) {
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
@@ -1267,21 +1267,21 @@ if (load_output_data) {
   #RMSE = 0.914505595301922 for worst fold =  Fold01
   #this is a worse model than movie+user model (0.8665076)
   
-  #'Possible reasons for this being the case is the large number of genres with 
-  #'a small number of observations
+  #' Possible reasons for this being the case is the large number of genres with 
+  #' a small number of observations
   
-  #'Because the model does not improve results, it will not be added to the 
-  #'results data frame. 
+  #' Because the model does not improve results, it will not be added to the 
+  #' results data frame. 
 
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
 
   ### Model: movie regularised ####
-  #'we apply regularisation (see report for details on the method) to the movie 
-  #'only model, using the parameter l_m (movie effet lambda) to penalise movies 
-  #'with a small number of ratings and improve how well the model generalise to 
-  #'new data 
+  #' we apply regularisation (see report for details on the method) to the movie 
+  #' only model, using the parameter l_m (movie effet lambda) to penalise movies 
+  #' with a small number of ratings and improve how well the model generalise to 
+  #' new data 
   
   get_pred_m_reg <- function(training_set,
                              test_set,
@@ -1289,6 +1289,10 @@ if (load_output_data) {
                              l_m 
                              ) {
     
+    #' this allows to provide the user min and max ratings in the training set
+    #' as an input which can speed up execution when working repeatedly with the 
+    #' same training set. if the dataframe is missing from the inputs, it is 
+    #' extracted using the get_userboundaries_trainingset function.
     if (missing(user_pred_boundaries_training_set)) {
       print("extracting user_pred_boundaries_training_set")
       user_pred_boundaries_training_set <- get_userboundaries_trainingset(training_set)
@@ -1310,6 +1314,8 @@ if (load_output_data) {
       left_join(effect_movie_reg,by="movieId") %>%
       mutate_all(~replace(., is.na(.), 0)) %>%
       mutate(pred = mu+b_i) %>%
+      mutate(pred = if_else(pred < 0.5,0.5,pred)) %>%
+      mutate(pred = if_else(pred > 5,5,pred)) %>%
       left_join(user_pred_boundaries_training_set,by = "userId") %>%
       mutate_all(~replace(., is.na(.), 0)) %>%
       mutate(pred = case_when(pred < minimum_rating  ~ minimum_rating,
@@ -1329,57 +1335,64 @@ if (load_output_data) {
   #' get_pred_m_reg, as it will  be the same for each evaluation of 
   #' get_pred_m_reg, thereby saving computational time in the minimizing process.
   worst_fold_best_method <- get_worst_fold_best_method(rmse_folds_results)
-  user_pred_boundaries_training_set_worstfold <- get_userboundaries_trainingset(edx[-test_index_folds[[worst_fold_best_method]],][,c(1,3)])
+  user_pred_boundaries_training_set_worstfold <- get_userboundaries_trainingset(
+    edx[-test_index_folds[[worst_fold_best_method]],][,c(1,3)])
   save_input_data()
   get_RMSE_worst_fold_m_reg_lm <- function(l) {
-    # training_set <- edx[-test_index_folds[[worst_fold_best_method]],c(1,2,3)]
-    # test_set <- edx[test_index_folds[[worst_fold_best_method]],c(1,2,3)]
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_m_reg(training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3)],
-                                       test_set = edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3)],
-                                       user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                                       l_m = l
-                                       ))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_m_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3)],
+        test_set = edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3)],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = l
+        )
+      )
     return(OutRMSE)
   }
   
-  #precision to which RMSE minimum is considered reached in the minimum finding function, chosen based on the target
-  #RMSEs having 5 significant digits provided.
+  #' precision to which RMSE minimum is considered reached in the minimum finding
+  #' function, chosen based on the target RMSEs having 5 significant digits
   precision_min_RMSE <-  1e-06 
   
-  #The lambda minimising this function is found by applying the minimum finding function to our worst fold RMSE function.
-  #Here we search between lambda = 0 and lambda = 10, with a precision on RMSE of precision_min_RMSE.
-  #By setting the with_details parameter to TRUE, we can plot the minimum finding process.
+  #' The lambda minimising this function is found by applying the minimum finding
+  #' function to our worst fold RMSE function. Here we search between lambda = 0
+  #' and lambda = 10, with a precision on RMSE of precision_min_RMSE.
+  #' By setting the with_details parameter to TRUE, we can plot the 
+  #' minimum finding process.
   Details_Lambda_Min_RMSE_worst_fold_m <- Find_Get_Val_Local_Minimum_Golden(0,10,
                                                                             get_RMSE_worst_fold_m_reg_lm, 
                                                                             precision_min_RMSE,TRUE,TRUE) 
 
-  #Number of function evaluation to find minimum with precision_min_RMSE precision:
+  #' Number of function evaluation to find minimum with precision_min_RMSE 
+  #' precision:
   print(length(unique(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$X))) 
-  #6 evaluations only
+  #6 evaluations
   RMSE_movie_reg <- min(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$Val)
   print(RMSE_movie_reg)
   #0.9435073
 
   #Systematic Lambda Search
-  #we vary lambda starting with 0 until 10 by increments of 0.1, stopping when we find a RMSE value
-  #greater than the previous lambda RMSE value
+  #'we vary lambda starting with 0 until 10 by increments of 0.1, stopping when 
+  #'we find a RMSE value greater than the previous lambda RMSE value
   RMSE_movie_extensive_minimum_search <- data.frame()
   Last_RMSE_m_search <- Inf
   for (lambda in seq(0,10,0.1)) {
     RMSE_m_search <- get_RMSE_worst_fold_m_reg_lm(lambda)
-    if(RMSE_m_search > Last_RMSE_m_search) {break} #new RMSE greater than previous, exiting the loop
+    if(RMSE_m_search > Last_RMSE_m_search) {
+      break #new RMSE greater than previous, exiting the loop
+      } 
     RMSE_movie_extensive_minimum_search <- RMSE_movie_extensive_minimum_search %>%
       bind_rows(data.frame(Lambda = lambda, RMSE = RMSE_m_search))
     Last_RMSE_m_search <- RMSE_m_search #saving previous RMSE value
   }
   #Number of function evaluation to find minimum :
   print(nrow(RMSE_movie_extensive_minimum_search)) 
-  #20 evaluations, 3 times more than Golden Section method
+  #20 evaluations, ~3 times more than Golden Section method
   
   RMSE_movie_systematic <- min(RMSE_movie_extensive_minimum_search$RMSE)
   print(RMSE_movie_systematic)
-  #0.9435059 which confirms there was no loss in precision
+  #0.9435059 so the precision is equivalent
   
   #Visualisation of systematic lambda search
   RMSE_movie_extensive_minimum_search %>%
@@ -1399,7 +1412,6 @@ if (load_output_data) {
   
   ggplot(Comp_SearchMethods%>% filter(Category  == "Extensive_Search"), 
          aes(Lambda, RMSE,colour = Category ,shape = Category )) + 
-    #geom_line() +
     geom_point(size = 1, stroke =1) +
     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search"),size = 1,stroke = 2)+
     geom_point(data = Comp_SearchMethods%>% filter(Category  == "Golden_Section_Search") %>% filter(RMSE == min(RMSE)) %>% mutate(Category  = "Golden_Section_Minimum"),size = 2,stroke = 2)+
@@ -1430,13 +1442,17 @@ if (load_output_data) {
     geom_point() +
     geom_line()
   
-  #However, one must be careful that the appropriate interval search is chosen. Indeed if the search interval is increased
-  #to the point that a minimum does not appear in the golden section search, then we might miss the minimum. Such 
-  #a case happens in the previous search if using the interval [0,20].
+  #' However, one must be careful that the appropriate interval search is 
+  #' chosen. Indeed if the search interval is increased to the point that a 
+  #' minimum does not appear in the golden section search, then we might miss 
+  #' the minimum. Such a case happens in the previous model if using the 
+  #' interval [0,50].
   
-  #To allow for that the search has been modified to allow further attempts between the first two location picked, as 
-  #there might still be a minimum.By setting the max_Nb_Attempt parameter to a value greater than 1, the function will 
-  #attempt to find a minimum between the the first two locations. 
+  #' To allow for that the function can make further attempts 
+  #' between the first two location picked, as there might still be a minimum.
+  #' By setting the max_Nb_Attempt parameter to a value greater than 1, the 
+  #' function will attempt to find a minimum between the the first two 
+  #' locations. 
   
   #one attempt only, minimum missed
   Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalONEATTEMPTMISSED <- Find_Get_Val_Local_Minimum_Golden(0,50,
@@ -1460,7 +1476,7 @@ if (load_output_data) {
     Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalTWOATTEMPTSMISSED$SearchRecord %>% mutate(case = "max_Nb_Attempt =2, Minimum Missed"),
     Details_Lambda_Min_RMSE_worst_fold_m_LargerIntervalTHREEATTEMPTSFOUND$SearchRecord %>% mutate(case = "max_Nb_Attempt =3, Minimum Found"))
   
-  #Comparing the two cases
+  #Comparing the cases in a faceted plot
   p_LargerInterval_SearchRecordComparison <-  LargerInterval_SearchRecordComparison %>% 
     mutate(step = as.character(step)) %>%
     ggplot(aes(X, Val,group = step)) +
@@ -1477,19 +1493,22 @@ if (load_output_data) {
   #minimum RMSE reached
   print(min(Details_Lambda_Min_RMSE_worst_fold_m$SearchRecord$Val)) 
   #0.94350736 which is worse than the movie + user model (0.866793)
-  #Because this model is not as good as the movie + user model, it will not be added to the results data frame.
+  #' Because this model is not as good as the movie + user model, it will not be 
+  #' added to the results data frame.
   
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
+  
   ### Model: Model: movie then user regularised ####
   
-  #we predict that the rating for movie i, user u is t the sum of
-  #the movie effect and the user effect as recalculated using the baseline
-  #with movie effect included and applying regularisation
+  #' we predict that the rating for movie i, user u is t the sum of the movie 
+  #' effect and the user effect as recalculated using the baseline with movie 
+  #' effect included and applying regularisation
   
-  #we allow for two different parameters lambda for the movie and user effect, so we can check
-  #whether this makes a difference in the accuracy of the predictions
+  #' we allow for two different parameters lambda for the movie and user effect,
+  #' so we can check whether this makes a difference in the accuracy of the 
+  #' predictions
   get_pred_m_u_reg <- function(training_set,test_set,
                                user_pred_boundaries_training_set,
                                l_m,l_u) {
@@ -1533,10 +1552,12 @@ if (load_output_data) {
     return(pred_mean_movie_user_reg)
   }
   
-  #Function giving the RMSE of the worst fold for a given value of Lambda
-  #First we consider the case with a unique lambda,  l_m = l_u = l 
-  #For speed of execution, only the column containing the data to be used (movieId, userId and rating) is provided
-  #As with the movie regularised model, we supply the user_pred_boundaries_training_set parameter for speed of execution
+  #' Function giving the RMSE of the worst fold for a given value of Lambda
+  #' Case 1: Unique lambda:  l_m = l_u = l 
+  #' For speed of execution, only the column containing the data to be used 
+  #' (movieId, userId and rating) is provided As with the movie regularised 
+  #' model, we supply the user_pred_boundaries_training_set parameter 
+  #' for speed of execution
   get_RMSE_worst_fold_mu_reg<- function(l) {
     OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
                         get_pred_m_u_reg(training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3)],
@@ -1547,22 +1568,24 @@ if (load_output_data) {
     return(OutRMSE)
   }
   
-  #The lambda minimising this function is found by applying the minimum finding function to our worst fold RMSE function
-  #Here we search between lambda = 0 and lambda = 10, with a precision on RMSE of precision_min_RMSE
-  #By setting the with_details parameter to TRUE, we can observe the minimum finding process
-  Details_Lambda_Min_RMSE_worst_fold_mu <- Find_Get_Val_Local_Minimum_Golden(0,10,
-                                                                             get_RMSE_worst_fold_mu_reg, 
-                                                                             precision_min_RMSE,TRUE,TRUE) 
+  #' The lambda minimising the RMSE is found by applying the minimum 
+  #' finding function to the worst fold RMSE function
+  Details_Lambda_Min_RMSE_worst_fold_mu <- Find_Get_Val_Local_Minimum_Golden(
+    0,10,
+    get_RMSE_worst_fold_mu_reg,
+    precision_min_RMSE,TRUE,TRUE) 
   
-  Lambda_Min_RMSE_worst_fold_mu <- Details_Lambda_Min_RMSE_worst_fold_mu$Output #4.72136
-  print(Lambda_Min_RMSE_worst_fold_mu) #4.72136
+  Lambda_Min_RMSE_worst_fold_mu <- Details_Lambda_Min_RMSE_worst_fold_mu$Output 
+  print(Lambda_Min_RMSE_worst_fold_mu) 
+  #4.72136
   print(min(Details_Lambda_Min_RMSE_worst_fold_mu$SearchRecord$Val)) 
   #0.8660161, it is an improvement on the movie + user model (0.8665076)
   
   #Minimum finding observations
   #number of function evaluation to find minimising lambda
-  nb_eval <- length(unique(Details_Lambda_Min_RMSE_worst_fold_mu$SearchRecord$X)) 
-  print(nb_eval) #8 evaluations only, compared to 48 evaluations minimum to get a result of 4.7 for lambda
+  nb_eval <- 
+  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_mu$SearchRecord$X))) 
+  #8 evaluations only, compared to 48 evaluations minimum in a systematic search
   
   #Visualisations of lambda search
   #search steps visualisations - using facets
@@ -1589,38 +1612,52 @@ if (load_output_data) {
     geom_point() +
     geom_line()
   
-  # We attempt applying different lambdas for movie and user effects
-  # we set the lambda for movie to be the one determined for the movie only regularised model
-  # then we keep the lambda for user effect variable, obtaining a monovariate function to 
-  # minimise
+  #' Function giving the RMSE of the worst fold for a given value of Lambda
+  #' Case 2: Different lambda
+  #' we set the lambda for movie to be the one determined for the movie only 
+  #' regularised model then we keep the lambda for user effect variable, 
+  #' obtaining a monovariate function to minimise
   get_RMSE_worst_fold_m_u_reg <- function(l) {
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_m_u_reg(training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3)],
-                                         test_set = edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3)],
-                                         user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                                         l_m = Lambda_Min_RMSE_worst_fold_m,
-                                         l))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_m_u_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3)],
+        test_set = edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3)],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = Lambda_Min_RMSE_worst_fold_m, #value determined for movie only model
+        l
+        )
+      )
     return(OutRMSE)
   }
   
-  Details_Lambda_Min_RMSE_worst_fold_m_u <- Find_Get_Val_Local_Minimum_Golden(0,10,
-                                                                              get_RMSE_worst_fold_m_u_reg,
-                                                                              precision_min_RMSE,TRUE,TRUE) 
+  #' The lambda minimising the RMSE is found by applying the minimum 
+  #' finding function to the worst fold RMSE function
+  Details_Lambda_Min_RMSE_worst_fold_m_u <- Find_Get_Val_Local_Minimum_Golden(
+    0,10,
+    get_RMSE_worst_fold_m_u_reg,
+    precision_min_RMSE,TRUE,TRUE) 
   
   Lambda_Min_RMSE_worst_fold_m_u <- Details_Lambda_Min_RMSE_worst_fold_m_u$Output 
-  print(Lambda_Min_RMSE_worst_fold_m_u) #4.72136 
-  #same lambda for user effect as unique lambda for movie+user
+  print(Lambda_Min_RMSE_worst_fold_m_u)  
+  #4.72136 same lambda for user effect as unique lambda for movie+user
   print(min(Details_Lambda_Min_RMSE_worst_fold_m_u$SearchRecord$Val)) 
-  #0.8660269 RMSE for the multiple lambda is slightly worse 
-  #therefore for the movie+user model regularised we will keep the single lambda version. 
+  #' 0.8660269 RMSE for the multiple lambda is slightly worse than 
+  #' single lambda (0.8660161)
+  #' Therefore for the movie+user model regularised we will use the 
+  #' single lambda version. 
   
   #saving the information on comparing single vs lambda for regularised models
-  SingleVsMultipleLambdaComp <- data.frame(method= "movie+user",
-                                           SingleLambdaRMSE = min(Details_Lambda_Min_RMSE_worst_fold_mu$SearchRecord$Val),
-                                           MultipleLambdaRMSE = min(Details_Lambda_Min_RMSE_worst_fold_m_u$SearchRecord$Val)
-                                           )
-  #prediction function, using the minimising lambda (Lambda_Min_RMSE_worst_fold_reg_mu) previously obtained
-  #and keeping user_pred_boundaries_training_set unset so it is re-extracted for each training_set
+  SingleVsMultipleLambdaComp <- data.frame(
+    method= "movie+user",
+    SingleLambdaRMSE = min(Details_Lambda_Min_RMSE_worst_fold_mu$SearchRecord$Val),
+    MultipleLambdaRMSE = min(Details_Lambda_Min_RMSE_worst_fold_m_u$SearchRecord$Val)
+    )
+  
+  #' prediction function, using the minimising lambda previously obtained
+  #' (Lambda_Min_RMSE_worst_fold_reg_mu) and keeping 
+  #' user_pred_boundaries_training_set unset so it is re-extracted for 
+  #' each fold training_set
   get_pred_mu_reg_trained <- function(training_set, test_set) {
     return(get_pred_m_u_reg(training_set = training_set[,c(1,2,3)],
                             test_set = test_set[,c(1,2,3)],
@@ -1642,20 +1679,13 @@ if (load_output_data) {
   
   ### Model: movie then user then genres regularised #### 
   
-  #we predict that the rating for movie i, user u is t the sum of
-  #the following effects in that order movie effect, user effect and 
-  #movie genres effect, each applied on the previous baseline 
-  #However the effect from genres is applied not to the overall average of users
-  #but for each individual user. This approach is justified as genres preference 
-  #is likely to be stronger for individual user, rather than for the overall users, 
-  #so the effect should be greater and therefore greater accuracy reached
-  #however the genres can be a quite specific combination that would give raise 
-  #to issues of generalisation - making regularisation a necessity to see
-  #a valuable improvement.
-  #in order to speed up the search for the minimising lambda, we set a minimum number
-  #of ratings and a minimum number of movies for a given genre, which will reduce the 
-  #size of the join (at the expense of overall RMSE reduction which is fine at the lambda
-  #determination stage)
+  #' we predict that the rating for movie i, user u is t the sum of the 
+  #' following effects in that order movie effect, user effect and movie genres 
+  #' effect, each applied on the previous baseline.
+  #' In order to speed up the search for the minimising lambda, we set a minimum
+  #' number of ratings and a minimum number of movies for a given genre, which 
+  #' will reduce the size of the join (at the expense of overall RMSE reduction 
+  #' which is fine at the lambda determination stage)
   
   get_pred_m_u_g_reg <- function(training_set,test_set,
                                  user_pred_boundaries_training_set=NA,
@@ -1690,8 +1720,8 @@ if (load_output_data) {
       left_join(effect_movie,by="movieId") %>%
       left_join(effect_movie_user,by="userId") %>%
       group_by(genres) %>%
-      filter(n_distinct(movieId)>min_nb_movies) %>%
-      filter(n() > min_nb_ratings) %>%
+      filter(n_distinct(movieId)>min_nb_movies) %>% #filtering nb of movies
+      filter(n() > min_nb_ratings) %>% #filtering nb of ratings
       ungroup() %>%
       group_by(userId,genres) %>%
       summarise(b_g = sum(rating-mu-b_i-b_u)/(n()+l_g)) %>%
@@ -1716,30 +1746,42 @@ if (load_output_data) {
     return(pred_mean_movie_user_genres_peruser_reg)
   }
   
-  #single lambda applied to movie user and genres
+  #' Function giving the RMSE of the worst fold for a given value of Lambda
+  #' Case 1: Unique lambda:  l_m = l_u = l_g = l 
   get_RMSE_worst_fold_mug_reg <- function(l) {
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_m_u_g_reg(
-                          training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
-                          test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
-                          user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                          l_m = l,
-                          l_u = l,
-                          l_g = l,
-                          min_nb_movies = 300, 
-                          min_nb_ratings = 1))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_m_u_g_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
+        test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = l,
+        l_u = l,
+        l_g = l,
+        min_nb_movies = 300, 
+        min_nb_ratings = 1)
+      )
     return(OutRMSE)
   }
-  Details_Lambda_Min_RMSE_worst_fold_mug <- Find_Get_Val_Local_Minimum_Golden(0,20,get_RMSE_worst_fold_mug_reg ,1e-06,TRUE,TRUE)  
+  #' The lambda minimising the RMSE is found by applying the minimum 
+  #' finding function to the worst fold RMSE function 
+  Details_Lambda_Min_RMSE_worst_fold_mug <- Find_Get_Val_Local_Minimum_Golden(
+    0,20,
+    get_RMSE_worst_fold_mug_reg ,
+    precision_min_RMSE,TRUE,TRUE)  
   
-  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_mug$SearchRecord$X))) #11 evaluations to find minimum
+  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_mug$SearchRecord$X))) 
+  #11 evaluations to find minimum
   
   Lambda_Min_RMSE_worst_fold_mug <- Details_Lambda_Min_RMSE_worst_fold_mug$Output
-  print(Lambda_Min_RMSE_worst_fold_mug) #8.06045
+  print(Lambda_Min_RMSE_worst_fold_mug) 
+  #8.06045
   
-  #the trained function is get_RMSE_worst_fold_m_u_g_reg with the lambda as obtained by minimizing the RMSE on the worst fold
-  #and keeping user_pred_boundaries_training_set unset so it is re-extracted for each training_set
-  #and decreasing min_nb_movies to defaults 1 for best precision (default values)
+  #' the trained function is get_RMSE_worst_fold_m_u_g_reg with the lambda as 
+  #' obtained by minimizing the RMSE on the worst fold #and keeping 
+  #' user_pred_boundaries_training_set unset so it is re-extracted for each 
+  #' training_set and decreasing min_nb_movies to defaults 1 for best precision 
+  #' (default values)
   get_pred_mug_reg_trained <- function(training_set,test_set) {
     get_pred_m_u_g_reg(training_set = training_set,
                        test_set = test_set,
@@ -1756,33 +1798,45 @@ if (load_output_data) {
                        get_pred_func = get_pred_mug_reg_trained,
                        verbose = TRUE)
   #RMSE = 0.857317830930791 for worst fold =  Fold01
-  #this is a clear improvement from the non regularised case (0.9200688) and better than best model so far, 
-  # movie + user regularised (0.8660161)
+  #' this is a clear improvement from the non regularised case (0.9200688) and 
+  #' better than best model so far movie + user regularised (0.8660161)
   
-  #separate lambdas: we attempt again to use previous results and apply the new effect as its separate lambda.
-  #as the single lambda movie + user gave the best results, we keep that part the same, leaving l_g (lambda for genre effect)
-  #as the single variable for the RMSE function to minimise.
+  #' Function giving the RMSE of the worst fold for a given value of Lambda
+  #' Case 2: Incremental lambda 
+  #' we use previous results and apply the new effect as a separate lambda. As 
+  #' the single lambda movie + user gave the best results, we keep that part the
+  #' same, leaving l_g (lambda for genre effect) as the single variable for the 
+  #' RMSE function to minimise.
   get_RMSE_worst_fold_mu_g_reg <- function(l) {
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_m_u_g_reg(
-                          training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
-                          test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
-                          user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                          l_m = Lambda_Min_RMSE_worst_fold_mu,
-                          l_u = Lambda_Min_RMSE_worst_fold_mu,
-                          l_g = l,
-                          min_nb_movies = 300,
-                          min_nb_ratings = 0))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_m_u_g_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
+        test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = Lambda_Min_RMSE_worst_fold_mu, # minimizing lambda from movie+user reg model
+        l_u = Lambda_Min_RMSE_worst_fold_mu, # minimizing lambda from movie+user reg model
+        l_g = l,
+        min_nb_movies = 300,
+        min_nb_ratings = 0)
+      )
     return(OutRMSE)
   }
-  Details_Lambda_Min_RMSE_worst_fold_mu_g <- Find_Get_Val_Local_Minimum_Golden(0,20,get_RMSE_worst_fold_mu_g_reg ,1e-06,TRUE,TRUE)  
+  #' The lambda minimising the RMSE is found by applying the minimum 
+  #' finding function to the worst fold RMSE function
+  Details_Lambda_Min_RMSE_worst_fold_mu_g <- Find_Get_Val_Local_Minimum_Golden(
+    0,20,
+    get_RMSE_worst_fold_mu_g_reg ,
+    precision_min_RMSE,TRUE,TRUE)  
   Lambda_Min_RMSE_worst_fold_mu_g <- Details_Lambda_Min_RMSE_worst_fold_mu_g$Output
-  print(Lambda_Min_RMSE_worst_fold_mu_g) #12.36068 
+  print(Lambda_Min_RMSE_worst_fold_mu_g) 
+  #12.36068 
   
-  #the trained function is get_RMSE_worst_fold_m_u_g_reg with the lambda as obtained by minimizing the RMSE on the worst fold
-  #keeping l_m and l_u equal to the value found for the movie+user regularised model and l_g the minimising lambda 
-  #Lambda_Min_RMSE_worst_fold_mu_g
-  #and decreasing min_nb_movies to defaults 1 for best precision
+  #' the trained function is get_RMSE_worst_fold_m_u_g_reg with the lambda as 
+  #' obtained by minimizing the RMSE on the worst fold keeping l_m and l_u equal 
+  #' to the value found for the movie+user regularised model and l_g the 
+  #' minimising lambda Lambda_Min_RMSE_worst_fold_mu_g  and decreasing 
+  #' min_nb_movies to defaults 1 for best precision
   get_pred_mu_g_reg_trained <- function(training_set,test_set) {
     get_pred_m_u_g_reg(training_set = training_set,
                        test_set = test_set,
@@ -1792,14 +1846,15 @@ if (load_output_data) {
     )
   }
   
-  # RMSE on worst fold on trained model - multiple lambdas
+  # RMSE on worst fold on trained model - incremental lambdas
   RMSE_mu_g_reg_MultipleLambda <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
                        test_index_folds = test_index_folds,
                        movielens_data = edx,
                        get_pred_func = get_pred_mu_g_reg_trained,
                        verbose = TRUE)
   #RMSE = 0.857696501332263 for worst fold =  Fold01
-  #this is worse than single lambda value (0.8573178) so we will keep the model with a single lambda.
+  #' this is worse than single lambda value (0.8573178) so we will keep the 
+  #' model with a single lambda.
   
   #saving the information on comparing single vs lambda for regularised models
   SingleVsMultipleLambdaComp <- SingleVsMultipleLambdaComp  %>% 
@@ -1810,7 +1865,8 @@ if (load_output_data) {
                  )
       )
 
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_RMSE_mug_reg_trained
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_RMSE_mug_reg_trained
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie+user+genres reg",
@@ -1825,7 +1881,16 @@ if (load_output_data) {
 
   ### Model: movie then user then individual genres ####
   
-  #we now consider the effect of individual genres
+  #' The individual genres were extracted in the data cleaning section at the 
+  #' start of the output data section and saved in the indgenres_relevant data
+  #' frame. The list of individual genres was filtered to only keep those with 
+  #' more than 50 movies to ensure relevance.
+  #' The individual genres effect is calculated in a similar manner as the other 
+  #' effects, to obtain the effect that a single genre would have on a rating.
+  #' Then, a genres effect is derived for any new combination of genres by 
+  #' taking the average of the individual genres effects. Finally the obtained
+  #' genres effect is applied alongside movie and user effect to obtain the 
+  #' prediction.
   get_pred_mu_indgenres <- function(training_set,test_set) {
     
     print("extracting user_pred_boundaries_training_set")
@@ -1872,7 +1937,8 @@ if (load_output_data) {
       left_join(effect_movie_user_indgenres,by=c("userId","indgenres")) %>%
       mutate_all(~replace(., is.na(.), 0)) %>%
       group_by(userId,genres) %>%
-      mutate(b_g = mean(b_indg)) %>% #the effect of a genre is the average of the individual genres effects
+      #the effect of a genre is the average of the individual genres effects
+      mutate(b_g = mean(b_indg)) %>% 
       ungroup() %>%
       select(-c(indgenres,b_indg)) %>%
       unique() %>%
@@ -1897,9 +1963,10 @@ if (load_output_data) {
                        get_pred_func = get_pred_mu_indgenres,
                        verbose = TRUE)
   #RMSE = 0.851451518686382 for worst fold =  Fold01
-  #this is a non regularised model, performing better than movie + users + genres regularised (0.8573178)
+  #better than movie + users + genres regularised (0.8573178)
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mu_indgenres
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_mu_indgenres
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie+user+indgenres",
@@ -1912,10 +1979,12 @@ if (load_output_data) {
                                 save_output = !load_output_data)
   
   ### Model: movie then user then indgenres for all users then indgenres for ind users ####
-  #we now consider the effect of individual genres but instead of applying the effect directly for each user, 
-  #we first consider the effect of individual genres on the whole user population, the assumption to test being that 
-  #for genres that have not been rated by an individual user, the "all user" individual genre effect would give a better
-  #precision than defaulting to no effect at all. 
+  #' we now consider the effect of individual genres but instead of applying the
+  #' effect directly for each user, we first consider the effect of individual 
+  #' genres on the whole user population, the assumption to test being that for
+  #' genres that have not been rated by an individual user, the "all user" 
+  #' individual genre effect would give a better precision than defaulting to no
+  #' effect at all. 
   get_pred_mu_indgenres_inc <- function(training_set,test_set) {
     
     print("extracting user_pred_boundaries_training_set")
@@ -2006,8 +2075,10 @@ if (load_output_data) {
                        get_pred_func = get_pred_mu_indgenres_inc,
                        verbose = TRUE)
   #RMSE = 0.851455312306009 for worst fold =  Fold01
-  #this is slightly worse than the simple movie +user + individual genres (0.851451518686382)
-  # therefore we will not be adding the results to the results dataframe.
+  #' this is slightly worse than the movie +user + individual genres model 
+  #' (0.851451518686382). It appears that genres preference is too great of a
+  #' personal preference to bring valuable information when none is available.
+  #' we will not be adding the results to the results dataframe.
 
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
@@ -2016,12 +2087,9 @@ if (load_output_data) {
   
   ### Model: movie+user+indgenres reg  ####
   
-  #we predict that the rating for movie i, user u is t the sum of
-  #the following effects in that order movie effect, user effect and 
-  #individual movie genres effect, each applied on the previous baseline,
-  #with regularisation.
-  #this requires wrangling of the movies genre from single field
-  
+  #' we predict that the rating for movie i, user u is t the sum of the 
+  #' following effects movie, user and individual movie genres, each applied on 
+  #' the previous baseline with regularisation.
   get_pred_muig_reg <- function(training_set,test_set,
                                 user_pred_boundaries_training_set,
                                 l_m,l_u,l_g
@@ -2065,8 +2133,6 @@ if (load_output_data) {
       ungroup()  
     
     print("prediction")
-    # indgenres_relevant_test <- indgenres_relevant %>% 
-    #   filter(movieId %in% test_set$movieId)
     pred_mean_movie_user_indgenres_reg <- test_set %>%
       select(movieId,userId,rating,genres) %>%
       left_join(effect_movie,by="movieId") %>%
@@ -2095,57 +2161,65 @@ if (load_output_data) {
     return(pred_mean_movie_user_indgenres_reg)
   }
   
-  #single lambda applied to movie user and genres
+  #' Case 1: Unique lambda:  l_m = l_u = l_g = l 
   get_RMSE_worst_fold_muig_reg <- function(l) {
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_muig_reg(
-                          training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
-                          test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
-                          user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                          l_m = l,
-                          l_u = l,
-                          l_g = l))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_muig_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
+        test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = l,
+        l_u = l,
+        l_g = l))
     return(OutRMSE)
   }
-  Details_Lambda_Min_RMSE_worst_fold_muig <- Find_Get_Val_Local_Minimum_Golden(0,10,get_RMSE_worst_fold_muig_reg ,1e-06,TRUE,TRUE)  
-  
-  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_muig$SearchRecord$X))) #11 evaluations to find minimum
-  
+  Details_Lambda_Min_RMSE_worst_fold_muig <- Find_Get_Val_Local_Minimum_Golden(
+    0,10,
+    get_RMSE_worst_fold_muig_reg,
+    precision_min_RMSE,TRUE,TRUE)  
+  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_muig$SearchRecord$X))) 
+  #11 evaluations to find minimum
   Lambda_Min_RMSE_worst_fold_muig <- Details_Lambda_Min_RMSE_worst_fold_muig$Output
-  print(Lambda_Min_RMSE_worst_fold_muig) #2.229124
+  print(Lambda_Min_RMSE_worst_fold_muig) 
+  #2.229124
   
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
   
-  #multiple lambdas - we attempt getting to a lower RMSE by using minimising lambda
-  #obtained for simpler model (movie + user) and varying only the lambda for the
-  #additional effect (individual genre)
-  #automatic search for lambda
+  #' Case 2: Incremental Lambda
+  #' we use previous results and apply the new effect as a separate lambda.
   get_RMSE_worst_fold_mu_ig_reg <- function(l) {
-    OutRMSE <- get_RMSE(edx[test_index_folds[[worst_fold_best_method]]]$rating,
-                        get_pred_muig_reg(
-                          training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
-                          test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
-                          user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
-                          l_m = Lambda_Min_RMSE_worst_fold_mu,
-                          l_u = Lambda_Min_RMSE_worst_fold_mu,
-                          l_g = l))
+    OutRMSE <- get_RMSE(
+      edx[test_index_folds[[worst_fold_best_method]]]$rating,
+      get_pred_muig_reg(
+        training_set = edx[-test_index_folds[[worst_fold_best_method]],][,c(1,2,3,6)],
+        test_set= edx[test_index_folds[[worst_fold_best_method]]][,c(1,2,3,6)],
+        user_pred_boundaries_training_set = user_pred_boundaries_training_set_worstfold,
+        l_m = Lambda_Min_RMSE_worst_fold_mu, # minimizing lambda from movie+user reg model
+        l_u = Lambda_Min_RMSE_worst_fold_mu, # minimizing lambda from movie+user reg model
+        l_g = l))
     return(OutRMSE)
   }
   
-  Details_Lambda_Min_RMSE_worst_fold_mu_ig <- Find_Get_Val_Local_Minimum_Golden(0,5,get_RMSE_worst_fold_mu_ig_reg ,1e-06,TRUE,TRUE)  
-  
-  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_mu_ig$SearchRecord$X))) #8 evaluations to find minimum
-  
+  Details_Lambda_Min_RMSE_worst_fold_mu_ig <- Find_Get_Val_Local_Minimum_Golden(
+    0,5,
+    get_RMSE_worst_fold_mu_ig_reg,
+    precision_min_RMSE,TRUE,TRUE)  
+  print(length(unique(Details_Lambda_Min_RMSE_worst_fold_mu_ig$SearchRecord$X))) 
+  #8 evaluations to find minimum
   Lambda_Min_RMSE_worst_fold_mu_ig <- Details_Lambda_Min_RMSE_worst_fold_mu_ig$Output
-  print(Lambda_Min_RMSE_worst_fold_mu_ig) #2.082039
+  print(Lambda_Min_RMSE_worst_fold_mu_ig) 
+  #2.082039
   
-  #check which lambda choice is better (i.e. allowing for lower RMSE)
-  print(min(Details_Lambda_Min_RMSE_worst_fold_muig$SearchRecord$Val)) #0.8496666 for single lambda
-  print(min(Details_Lambda_Min_RMSE_worst_fold_mu_ig$SearchRecord$Val)) #0.8495601 for multiple lambdas
-  #results are slightly better using a different lambda for individual genre effect, 
-  #so we use this model will be kept and added to the results
+  #check which case yielded lowest RMSE
+  print(min(Details_Lambda_Min_RMSE_worst_fold_muig$SearchRecord$Val)) 
+  #0.8496666 for single lambda
+  print(min(Details_Lambda_Min_RMSE_worst_fold_mu_ig$SearchRecord$Val)) 
+  #0.8495601 for multiple lambdas
+  #' results are slightly better using a different lambda for individual genre 
+  #' effect, so this model will be kept and added to the results
   
   #saving the information on comparing single vs lambda for regularised models
   SingleVsMultipleLambdaComp <- SingleVsMultipleLambdaComp  %>% 
@@ -2156,8 +2230,10 @@ if (load_output_data) {
       )
     )
   
-  #the trained function is get_pred_muig_reg with the lambdas as obtained by minimizing the RMSE on the worst fold
-  #and keeping user_pred_boundaries_training_set unset so it is re-extracted for each training_set 
+  #' the trained function is get_pred_muig_reg as obtained by 
+  #' minimizing the RMSE on the worst fold with multiple lambdas and keeping 
+  #' user_pred_boundaries_training_set unset so it is re-extracted for each 
+  #' training_set 
   get_pred_muig_reg_trained <- function(tr,te) {
     get_pred_muig_reg(training_set = tr,
                       test_set = te,
@@ -2167,14 +2243,16 @@ if (load_output_data) {
                       )
   }
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mean_movie_user_indgenres
+  #' adding the results by applying get_RMSE_folds with 
+  #' get_pred_func = get_pred_muig_reg_trained
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie+user+indgenres reg",
-                        as.data.frame(get_RMSE_folds(test_index_folds = test_index_folds,
-                                                     movielens_data = edx[,c(1,2,3,6)],
-                                                     get_pred_func = get_pred_muig_reg_trained
-                                                     ))))
+                        as.data.frame(get_RMSE_folds(
+                          test_index_folds = test_index_folds,
+                          movielens_data = edx[,c(1,2,3,6)],
+                          get_pred_func = get_pred_muig_reg_trained
+                          ))))
  
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
@@ -2294,7 +2372,7 @@ if (load_output_data) {
                           ))
     return(OutRMSE)
   }
-  Details_Lambda_Min_RMSE_worst_fold_muigy <- Find_Get_Val_Local_Minimum_Golden(0,20,get_RMSE_worst_fold_muigy_reg ,1e-06,TRUE,TRUE)  
+  Details_Lambda_Min_RMSE_worst_fold_muigy <- Find_Get_Val_Local_Minimum_Golden(0,20,get_RMSE_worst_fold_muigy_reg ,precision_min_RMSE,TRUE,TRUE)  
   Lambda_Min_RMSE_worst_fold_muigy   <- Details_Lambda_Min_RMSE_worst_fold_muigy$Output
   print(Lambda_Min_RMSE_worst_fold_muigy) #12.09757
   
