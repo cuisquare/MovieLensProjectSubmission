@@ -44,6 +44,6 @@ The code has been organised in sections using **[code folding](https://support.r
 
 If you want to re-run the whole of the script from scratch you will have to hard set the parameters *load_input_data* and *load_output_data* to FALSE, which you will find in the section called *# RUNNING OR LOADING LOGIC ####*. Note however that running the whole script from scratch takes around 5-6 hours on a 16Gb machine so it is not advised to do so. 
 
-## Disclaimer
+## Honour Code Disclaimer
 
 This work was realised by the author without external help or plagiarism. Where 3rd party material was used it has been appropriately attributed in the report and it did not pertain to the actual analysis work. 

@@ -31,9 +31,17 @@ get_movielens <- function() {
   
   names(movies) <- c("movieId","title","genres" )
   
-  movies <- movies %>% mutate(movieId = as.numeric(movieId),
-                                             title = as.character(title),
-                                             genres = as.character(genres))
+  if(paste0(version$major,".",version$minor)<"4.0") {
+    # if using R 3.6 or earlier:
+    movies <- movies %>% mutate(movieId = as.numeric(levels(movieId))[movieId],
+                                title = as.character(title),
+                                genres = as.character(genres))
+  } else {
+    # if using R 4.0 or later:
+    movies <- movies %>% mutate(movieId = as.numeric(movieId),
+                                title = as.character(title),
+                                genres = as.character(genres))    
+  }
   
   movielens <- left_join(ratings, movies, by = "movieId")
   
