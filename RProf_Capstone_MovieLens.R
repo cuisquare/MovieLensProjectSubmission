@@ -52,10 +52,10 @@ get_movielens <- function() {
 
 ## Function createMovieLensDataPartition ####
 # Splits the 'movielens' dataframe into a training set named 'edx' and
-#a test set named 'validation'
-#if remove_sparse is TRUE, the test set will be filtered to only have ratings for
-#movies and users which are also present in the training set. remove_sparse being TRUE
-# will produce the same data set as outlined in the problem set code.
+# a test set named 'validation'
+# if remove_sparse is TRUE, the test set will be filtered to only have ratings for
+# movies and users which are also present in the training set. remove_sparse being TRUE
+# will produce the same data set as outlined in the HarvardX problem set code.
 createMovieLensDataPartition <- function(movielens_data,p,remove_sparse) {
   test_index <- createDataPartition(y = movielens_data$rating, 
                                     times = 1, 
@@ -81,11 +81,13 @@ createMovieLensDataPartition <- function(movielens_data,p,remove_sparse) {
 }
 
 ## Function createMovieLensFolds ####
-# Provides the index required to split a 'movielens_data' dataframe, containing the same type of data as the movielens dataframe,
-#into k non overlapping folds. Each fold index would define a test set, while the remaining indices would be the training set.
-#if remove_sparse is TRUE, each test set will be filtered to only have ratings for
-#movies and users which are also present in the training set, then the corresponding index be modified accordingly.
-#if remove_sparse is FALSE, this function is equivalent to just applying caret package createFolds to movielens_data.
+# Provides the index required to split a 'movielens_data' dataframe, containing the same 
+# type of data as the movielens dataframe, into k non overlapping folds. Each fold index 
+# would define a test set, while the remaining indices would be the training set.
+# if remove_sparse is TRUE, each test set will be filtered to only have ratings for
+# movies and users which are also present in the training set, then the corresponding 
+# index be modified accordingly. if remove_sparse is FALSE, this function is equivalent 
+# to just applying caret package createFolds to movielens_data.
 createMovieLensFolds <- function(movielens_data,k,remove_sparse) {
   test_index_list <- createFolds(y = movielens_data$rating,
                                  k = k,
@@ -98,18 +100,19 @@ createMovieLensFolds <- function(movielens_data,k,remove_sparse) {
     training_set <- movielens_data[-test_index,]
     
     if(remove_sparse) {
-      # Make sure userId and movieId in validation set are also in training set
+      #check userId and movieId in validation set are also in training set
       temp <- movielens_data[test_index,]
       test_set <- temp %>%
         semi_join(training_set, by = "movieId") %>%
         semi_join(training_set, by = "userId")
-      # Add rows removed from validation set back into training set
+      #Add rows removed from validation set back into training set
       removed <- anti_join(temp, test_set)
       training_set <- rbind(training_set, removed)
     } else {
       test_set <- movielens_data[test_index,]
     }
-    #storing updated test_index (in case it was modified by the removing of sparse entries)
+    #storing updated test_index (in case it was modified by the removing of 
+    #sparse entries)
     test_index <- test_set$row_index
     
     test_index_list[[name]] <- test_index
@@ -124,13 +127,16 @@ get_RMSE <- function(true_ratings, predicted_ratings){
 }
 
 ## Function get_RMSE_folds ####
-#Provides the Cross validation RMSEs for all folds as named list, with names created using the folds names 
+#Provides the Cross validation RMSEs for all folds as named list, with names created 
+#using the folds names 
 #Inputs :
 #test_index_folds: named list containing the indices for each fold
-#movielens_data: dataframe containing the data from movielens to be partitioned using the folds - this assumes that the movielens_data 
-#is the same dataframe that test_index_folds was extracted from.
-#Input get_pred_func: function giving the prediction of ratings for a test set test_set considering a training set training_set assumed to be
-#of the movielens_data dataframe type. Each model below will have its own get_pred_func.
+#movielens_data: dataframe containing the data from movielens to be partitioned 
+#using the folds - this assumes that the movielens_data is the same dataframe 
+#that test_index_folds was extracted from.
+#get_pred_func: function giving the prediction of ratings for a test set 
+#considering a training set training_set assumed to be of the movielens_data 
+#dataframe type. Each prediction model will have its own get_pred_func.
 #Returns: 
 #RMSE_folds, the RMSEs for each fold as a named list.
 get_RMSE_folds <- function(test_index_folds,movielens_data,get_pred_func) {
@@ -162,25 +168,13 @@ get_pred_fold <- function(test_index_folds,foldname,movielens_data,get_pred_func
 }
 
 ## Function get_worst_fold_best_method ####
-#Determines the current "worst fold" considering results saved so far
-#We want to use a single lambda from training data, to be used in the final model. To achieve this in the context of a 10 Folds cross 
-#validation, we consider for each method (candidate target method for end model), the fold for which the RMSE 
-#is the highest ("worst fold"). We then apply regularisation to that fold and determine which lambda minimises the RMSE, We then 
-#use that lambda for all folds to determine the RMSE. 
-
-#Another possibility would be to regularise all folds using the same lambda, picking the lambda that minimises the average RMSE. 
-#This would takes much longer to run because it requires 10 times as many calculations. We could also regularise all folds individually 
-#to obtain 10 lambdas. this will take 10 times as long as function 1. Unless the models chosen do not perform to the desired targets, 
-#we will not explore those methods, so as to speed up the results generation. 
-
-#getting the name of fold for which highest RMSE using the best method (lowest average RMSE) in order to excluse the possibility, 
-#as far as possible, that the RMSE be high because of the method being too inadequate (therefore making the notion of worst fold less reliable)
-#during the study it will be important to verify that the worst fold thus determined changes or not by re-running that function on the best model known 
-#at that point of the study.
-
+#Determines the current "worst fold" considering results saved. Practically, we 
+#consider for the best method (defined as the one with the lowest mean RMSE 
+# over the folds)), the fold with highest RMSE ("worst fold").  
 #Inputs:
-#rmse_folds_results data frame containing the results obtained so far on the various models considered
-#Outputs:
+#rmse_folds_results data frame containing the results obtained so far on the 
+#various models considered
+#Returns:
 #name of the worst fold
 get_worst_fold_best_method <- function(rmse_folds_results) {
   worst_fold_best_method <- rmse_folds_results %>%
@@ -473,16 +467,17 @@ Find_Get_Val_Local_Minimum_Golden <- function(X_Min,X_Max,
 }
 
 ## Function save_input_data ####
-#Function to save the static input data, which will not change throughout the script once created
+#Function to save the static input data, which will not change throughout 
+#the script once created
 save_input_data <- function() {
   filename <- "Data/Input.RData"
-  candidateobjectlist <- c("edx", 
-                  "validation" , 
-                  "test_index_folds" , 
-                  "release_years_ratings", 
-                  "timestamp_day_rating",
-                  "do_remove_sparse",  
-                  "worst_fold_best_method")  
+  candidateobjectlist <- c("edx",
+                           "validation", 
+                           "test_index_folds", 
+                           "release_years_ratings",
+                           "timestamp_day_rating",
+                           "do_remove_sparse", 
+                           "worst_fold_best_method")  
   objectlist <- c()
   for (object in candidateobjectlist) {
     if (exists(object)) {
@@ -494,11 +489,12 @@ save_input_data <- function() {
 }
 
 ## Function save_output_data ####
-#Function to save all intermediary  output results in  RData file, with name subset with savenum
-#it outputs savenum increased with 1, which allows to have incremental saves throughout the script run 
-# by calling #savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) 
-# this allows to save time in case of a crash by resuming the run from the last place it crashed 
-# (loading results already produced)
+#Function to save all intermediary  output results in  RData file, with name 
+#subset with savenum it outputs savenum increased with 1, which allows to have 
+#incremental saves throughout the script run by calling 
+#savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) 
+# this allows to save time in case of a crash in a full run by resuming the run from 
+# the last place it crashed after loading results already produced using the load function
 save_output_data <- function(savenum,save_output,objectlist) {
   if (save_output) {
     filenameroot <- "Data/Output_"
@@ -525,47 +521,51 @@ save_output_data <- function(savenum,save_output,objectlist) {
   }
   return (savenum)
 }
-
-
 # RUNNING OR LOADING LOGIC ####
 
-# this section sets up whether the data will be loaded from a RData file,
-# or will be calculated from scratch. 
-# We differentiate between Input Data, which is the data from movielens, 
-# without further analysis just arranged in a usable way; and Output Data 
-# which is the data produced from manipulating the data typically the models run and 
-# corresponding RMSE results. 
+#' this section sets up whether the data will be loaded from a RData file,
+#' or will be calculated from scratch.
+#' 
+#' We differentiate between Input Data, which is the data from movielens, 
+#' without further analysis just arranged in a usable way; and Output Data 
+#' which is the data produced from manipulating the data typically the models
+#' run and corresponding RMSE results. 
 
-# Even if the option to load the data is chosen, it is advised to read through 
-# the code that produces it as it contains explanation as to how the input and output data
-# were produced. 
+#' Even if the option to load the data is chosen, it is advised to read through 
+#' the code that produces it as it contains explanation as to how the input and 
+#' output data were produced. 
 
-# By Default we will load the data if it is available in the project folder. Otherwise, it
-# will be recreated. You can hard set load_input_data and load_output_data so the code
-# will run even if the RData files are available. 
+#' By Default we will load the data if it is available in the project folder. 
+#' Otherwise, it will be recreated. You can hard set load_input_data and 
+#' load_output_data so the code will run even if the RData files are available. 
 
-# By cloning the repository you should get the 3 output data files Output_020.RData, Output_021.RData and Output_022.RData 
-# which will contain the results of the code in the output section. The objects produced by the input section were not added
-# to the repository as they are quite large. However, after running this script once the Input data will be saved in a RData file
-# which will be loaded at the next re-run.
+#' By cloning the repository you should get the 3 output data files 
+#' Output_020.RData, Output_021.RData and Output_022.RData  which will contain 
+#' the results of the code in the output section. The objects produced by the 
+#' input section were not added to the repository as they are quite large. 
+#' However, after running this script once the Input data will be saved in a 
+#' RData file which will be loaded at the next re-run.
 
 #input data loaded if available
 load_input_data <- file.exists("Data/Input.RData") 
 #output data loaded if available
-#This tells us that the whole of the run in section "OUTPUT DATA CREATION" is available and ready to be loaded
+#'This tells us that the whole of the run in section "OUTPUT DATA CREATION" 
+#'is available and ready to be loaded
 load_output_data <- file.exists("Data/Output_020.RData") 
 savecount <- 1
-savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save 
+#incremental save
+savecount <- save_output_data(savenum = savecount, 
+                              save_output = !load_output_data)  
 
 # INPUT DATA CREATION (data sets creation and cleaning)####
 # This section produces or loads the input data to the analysis 
 if (load_input_data) {
-  # load input data from RData file (if it was generated in a previous run)
+  # load input data from RData file
   load("Data/Input.RData")
 } else {
-  # this section creates input data from scratch and contains the code used to generate
-  # the data in the Input.RData file  
-  # it should run in an indicative duration of 4.456573 mins
+  #'this section creates input data from scratch and contains the code used 
+  #'to generate the data in the Input.RData file. 
+  #'it should run in an indicative duration of 4.456573 mins
   ## DATA SETS CREATION ####
   run_input_data_start_time <- Sys.time()
   
@@ -582,12 +582,13 @@ if (load_input_data) {
     save(movielens,file="movielens.RData")
   }
   
-  #Extracting training set ('edx') and test set ('validation') dataframes using the function
-  #extract_edx_valiration previously defined #with remove_sparse TRUE so the validation
-  #dataframe will not contain ratings for movies or users which are not present in
-  #the edx data frame
+  #'Extracting training set ('edx') and test set ('validation') dataframes using
+  #'the function extract_edx_validation previously defined with remove_sparse 
+  #'TRUE so the validation dataframe will not contain ratings for movies or 
+  #'users which are not present in the edx data frame
   set.seed(1, sample.kind="Rounding")
-  #createMovieLensDataPartition returns a named list containing edx and validation dataframes
+  #'createMovieLensDataPartition returns a named list containing edx and 
+  #'validation dataframes
   temp <- createMovieLensDataPartition(movielens_data = movielens,
                                        p= 0.1,
                                        remove_sparse = TRUE)
@@ -596,8 +597,8 @@ if (load_input_data) {
   rm(temp)
   rm(movielens)
   
-  #Split edx in training and testing set 10 times
-  #this is so lambda can be optimised without using the validation data set
+  #Split edx in training and testing set 10 times 
+  #this is so model parameters can be tuned 
   do_remove_sparse <- TRUE
   test_index_folds <- createMovieLensFolds(movielens_data = edx,
                                            k=10,
@@ -606,23 +607,20 @@ if (load_input_data) {
   savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
   ## DATA CLEANING ####
   ### Individual genres extraction ####
-  
+  #'we create the full list of genres for the edx data set, to speed up 
+  #'model training as this part of the computation is a constant
   #the genres field is a string made of the concatenation of individual genres
   #separated by the symbol "|"
-  
   gc()
-  
-  #we create the full list of genres for the edx data set, to speed up extraction later on
-  
   indgenres_movie_summary <- edx %>% 
     select(movieId,genres) %>%
     unique() %>%
     mutate(indgenres = strsplit(genres, "\\|")) %>% #split string into a list
-    unnest(indgenres)  %>%#one line per genre
+    unnest(indgenres)  %>% #one line per genre
     group_by(indgenres) %>%
     mutate(nb_movies = n())
   
-  #removing genres with less than 50 movies
+  #sublist of genres with more than 50 movies
   indgenres_relevant <- indgenres_movie_summary %>%
     filter(nb_movies >50) %>% 
     select(movieId,indgenres)
@@ -630,13 +628,14 @@ if (load_input_data) {
   ### Release year extraction ####
   
   #the movie release year is contained as part of the movie title
-  #it is located within brackets at the end of the title string
+  #it is located within brackets at the end of each title string
   #it is extracted by data wrangling using regex pattern \\((\\d{4})\\)$"
   
   release_years <- edx %>%
     select(movieId,title) %>%
     unique() %>%
-    mutate(release_year = as.numeric(str_match(string = title, pattern = "\\((\\d{4})\\)$")[,2])) %>%
+    mutate(release_year = as.numeric(str_match(string = title, 
+                                               pattern = "\\((\\d{4})\\)$")[,2])) %>%
     select(movieId,release_year)  
   
   release_years_ratings <- edx %>%
@@ -664,6 +663,8 @@ if (load_input_data) {
   print(p_ry_ratingsvsmovie) 
   
   ### Timestamp extraction ####
+  #timestamps are converted to date using the lubridate package function
+  #as_datetime
   timestamp_day_rating <- edx %>%
     select(timestamp) %>%
     unique() %>%
@@ -686,6 +687,7 @@ if (load_output_data) {
   savecount <- 21
 } else {
   ## DATA EXPLORATION ####
+  # Producing graphs for data exploration section of the report.
   nb_users <- length(unique(edx$userId))
   nb_movies <- length(unique(edx$movieId))
   nb_observations_edx <- nrow(edx)
@@ -709,6 +711,8 @@ if (load_output_data) {
   p_wholeratingperc_spread <- wholeratingperc_spread %>%
     ggplot(aes(perc_whole_rating)) +
     geom_histogram()
+  print(p_wholeratingperc_spread)
+  #more than 40000 users only give whole ratings
   
   typeraters_spread <- wholeratingperc_spread  %>%
     group_by(userId) %>%
@@ -720,19 +724,9 @@ if (load_output_data) {
     ) %>%
     ungroup() %>%
     group_by(whole_rating_type) %>%
-    summarise(nb_of_type = n()) #44763 users give only whole rating, 25109 with mix and 6 only with exclusive partial rating
-  
-  typeraters_spread <- wholeratingperc_spread  %>%
-    group_by(userId) %>%
-    summarise(whole_rating_type = case_when(
-      perc_whole_rating == 1.0 ~ "whole_rating_only",
-      perc_whole_rating == 0.0  ~ "partial_rating_only",
-      TRUE ~ "mix_whole_partial"
-    )
-    ) %>%
-    ungroup() %>%
-    group_by(whole_rating_type) %>%
-    summarise(nb_of_type = n()) #44763 users give only whole rating, 25109 with mix and 6 only with exclusive partial rating
+    summarise(nb_of_type = n()) 
+  #'44763 users give only whole rating, 25109 with mix and 6 
+  #'only with exclusive partial rating
   
   preferenceraters_spread <- wholeratingperc_spread  %>%
     group_by(userId) %>%
@@ -744,10 +738,9 @@ if (load_output_data) {
     ) %>%
     ungroup() %>%
     group_by(rating_preference) %>%
-    summarise(nb_of_type = n()) #44763 users give only whole rating, 25109 with mix and 6 only with exclusive partial rating
-  
-  #TODO attempt to round to closest whole rating the predicted ratings for users that have so far only ever given whole ratings
-  #TODO potentially refine to round to 0.5 for those who have gone 0.5 more and whole for those who have gone whole more
+    summarise(nb_of_type = n()) 
+  #'65084 users give whole rating more often than not, 4794 only give partial
+  #'rating more often than not
   
   p_indgenres_spread <- indgenres_movie_summary %>%
     ungroup() %>%
@@ -759,22 +752,24 @@ if (load_output_data) {
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 
   ## PREDICTION MODELS COMPARISON ####
-  #This section will generate RMSE for successive models, from scratch and contains the code
-  #that has generated the Output_020.RData file.
-  #Each subsection will incrementally save the output data in file Output_xxx.RData where xxx 
-  #is an integer starting 1 reaching 18. This allows for intermediate results to be saved
-  #in case of a crash during a run, so the data can be reloaded and output data run resumed to 
-  #save time. 
-  #The models take an indicative time of 5.718817 hours to run. 
-  # It is advised to first run the script without any change which should load the 
-  # Ouput_018.RData file contained in the Data folder. Once the data is loaded,
-  # specific parts of the code can be re-ran.
+  #' This section will generate RMSE for successive models, from scratch and 
+  #' contains the code that has generated the Output_020.RData file.
+  #' Each subsection will incrementally save the output data in file 
+  #' Output_xxx.RData where xxx is an integer starting 1 reaching 20. 
+  #' This allows for intermediate results to be saved in case of a crash during 
+  #' a full run, so the data can be reloaded and output data run resumed to save
+  #' time. Without a full run it is sufficient to load the last Output file 
+  #' created.
+  #' The models training take an indicative time of 5.718817 hours to run. 
+  #' It is advised to first run the script without any change which should 
+  #' load the Ouput_020.RData file contained in the Data folder. Once the data 
+  #' is loaded, specific parts of the code can be re-ran.
   run_output_data_start_time <- Sys.time()
-  #saving produced input data in Input.RData for future retrieval
+  
   ### Model: naive average ####
   
-  #we predict that each new rating is the average of the ratings for
-  #all previously rated movies by all users
+  #'we predict that each new rating is the average of the ratings for all 
+  #'previously rated movies by all users
   get_pred_mean <- function(training_set,test_set) {
     return(mean(training_set$rating))
   }
@@ -784,22 +779,24 @@ if (load_output_data) {
     rmse_folds_results <- data.frame()
   }
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mean
+  #'add• the results by applying get_RMSE_folds with 
+  #'get_pred_func = get_pred_mean
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="average",
                         as.data.frame(get_RMSE_folds(test_index_folds,
                                                      edx,
                                                      get_pred_mean))))
-
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data) 
   ### Model: average by user ####
   
-  #we predict that each new rating for a given user is the average
-  #of the ratings for all previously rated movies by that same user
-  #practically we calculate the average deviation (or effect) of rating
-  #for each user, then predict the overall average plus that effect will
-  #be that user rating for each new movie
+  #'we predict that each new rating for a given user is the average of the 
+  #'ratings for all previously rated movies by that same user practically we 
+  #'calculate the average deviation (or effect) of rating for each user, then 
+  #'predict the overall average plus that effect will be that user rating for 
+  #'each new movie
   get_pred_user <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_user <- training_set %>%
@@ -822,25 +819,25 @@ if (load_output_data) {
                        verbose = TRUE)
   #RMSE = 0.979776212801374 for worst fold =  Fold01
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mean_user
+  #'adding the results by applying get_RMSE_folds with 
+  #'get_pred_func = get_pred_mean_user
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="user",
                         as.data.frame(get_RMSE_folds(test_index_folds,
                                                      edx,
                                                      get_pred_user))))
-  
-  
-  
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   ### Model: average by movie ####
   
-  #we predict that each new rating for a given movie is the average
-  #of the ratings for that same movie by all other users
-  #practically we calculate the average deviation (or effect) of rating
-  #for each movie, then predict the overall average plus that effect will
-  #be that movie rating for each new user
+  #'we predict that each new rating for a given movie is the average of the 
+  #'ratings for that same movie by all other users practically we calculate the 
+  #'average deviation (or effect) of rating for each movie, then predict the 
+  #'overall average plus that effect will be that movie rating for each new user
   get_pred_movie <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_movie <- training_set %>%
@@ -855,9 +852,9 @@ if (load_output_data) {
     return(pred_mean_movie)
   }
   
-  # To conservatively evaluate the new model, we get the RMSE of that model applied on the fold that gave the highest RMSE using the 
-  # best model (lowest average RMSE) considered before that new model
-  # RMSE on worst fold
+  #'To conservatively evaluate the new model, we get the RMSE of that model 
+  #'applied on the fold that gave the highest RMSE using the best model 
+  #'(lowest average RMSE) considered before that new model RMSE on worst fold
   RMSE_movie <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
                        test_index_folds = test_index_folds,
                        movielens_data = edx,
@@ -867,19 +864,27 @@ if (load_output_data) {
   
   ### Model: average by movie, with Rounding to nearest allowed value ####
 
-  #We saw in the data exploration section that only possible ratings are 0.5-5 in increments of 0.5. The question then is whether for a model that
-  #gives results which are not within those actually allowed values, will there be an improvement by rounding to the nearest allowed value?
+  #'We saw in the data exploration section that only possible ratings are 
+  #' in the [0.5-5] range 'in increments of 0.5. We explore whether there is an 
+  #' improvement by rounding predictions to the nearest allowed value.
   
-  #We use the wholeratingperc_spread derived in the data exploration section but applying the extraction
-  #to the training_set as it is the only known data. Then if a user has more whole rating given than a set minimum percentage provided 
-  #as function parameter (min_perc_whole_rating) then rounding to nearest whole rating is applied. 
-  #By setting min_perc_whole_rating to 1.0 for instance,we can apply nearest whole rating rounding only to users that have so far only given whole ratings.
+  #'We use the wholeratingperc_spread derived in the data exploration section 
+  #'but applying the extraction to the training_set as it is the only known 
+  #'data. Then if a user has more whole rating given than a set minimum 
+  #'percentage provided as function parameter min_perc_whole_rating then 
+  #'rounding to nearest whole rating is applied. By setting 
+  #'min_perc_whole_rating to 1.0 for instance,we can apply nearest whole rating 
+  #'rounding only to users that have so far only given whole ratings.
   
-  #We also place a further control that such a rounding should only occur if the difference between the initial prediction to the nearest whole rating is 
-  #lower than parameter max_diff_pred_whole provided as input to the function. This allows for instance if set to 0.1 to only round to nearest whole rating the
-  #predicitions which are quite close to a whole rating (while setting to 0.5 would result in all non whole predictions to be rounded).
-  #the latest parameter round_val allows to choose to which nearest increment to round. If set to 1, if will round to nearest whole rating, for instance but could
-  #be set to 0.5 to round to nearest half rating.
+  #'We also place a further control that such a rounding should only occur if 
+  #'the difference between the initial prediction to the nearest whole rating is
+  #'lower than parameter max_diff_pred_whole provided as input to the function. 
+  #'This allows for instance if set to 0.1 to only round to nearest whole rating
+  #'the predicitions which are quite close to a whole rating (while setting to 
+  #'0.5 would result in all non whole predictions to be rounded). the latest 
+  #'parameter round_val allows to choose to which nearest increment to round. 
+  #'If set to 1, if will round to nearest whole rating, for instance but could
+  #'be set to 0.5 to round to nearest half rating.
   get_pred_mean_movie_rounded_mpwr_mdpw <- function(training_set,test_set,
                                           min_perc_whole_rating = 1.0,
                                           max_diff_pred_whole = 0.5,
@@ -907,8 +912,10 @@ if (load_output_data) {
     return(pred_mean_movie)
   }
   
-  #we user the model with min_perc_whole_rating = 1.0,  max_diff_pred_whole = 0.1, and   round_val = 1.0 that is, rounding  to the nearest whole rating,only for
-  #users who only gave whole ratings, if the rating is within 0.1 or less of a whole rating. 
+  #'we set the model with min_perc_whole_rating = 1.0,  
+  #'max_diff_pred_whole = 0.1, and round_val = 1.0 that is, rounding  to the 
+  #'nearest whole rating,only for users who only gave whole ratings so far, and 
+  #'only if the prediction is within 0.1 of a whole rating. 
   get_pred_mean_movie_rounded <- function(training_set,test_set) {
     return(get_pred_mean_movie_rounded_mpwr_mdpw(training_set,test_set,
                                                  min_perc_whole_rating = 1.0,
@@ -924,16 +931,24 @@ if (load_output_data) {
                        verbose = TRUE)
   #RMSE = 0.944882070377347 for worst fold =  Fold01
   
-  #Rounding does NOT improve results (result without rounding was 0.9446996), even in the conservative case considered.
-  #other types of systematic rounding were considered (rounding to nearest 0.5, other distance from nearest allowed value) which 
-  # also did not improve results. 
+  #'we observe that Rounding does NOT improve results (result without rounding 
+  #'was 0.9446996), even in the conservative case considered. other types of 
+  #'systematic rounding were considered (rounding to nearest 0.5, other distance
+  #'from nearest allowed value) which also did not improve results. 
   
   
-  #we can try to see why there was no improvement overall, by looking at which predictions were improved and which were not and by how much
+  #'we can try to see why there was no improvement overall, by looking at which 
+  #'predictions were improved and which were not and by how much
   worst_fold_best_method <- get_worst_fold_best_method(rmse_folds_results)
-  comp_mean_movie <- data.frame(pred_mean_movie = get_pred_worstfold(rmse_folds_results,test_index_folds,edx,get_pred_movie),
-                                pred_mean_movie_rounded = get_pred_worstfold(rmse_folds_results,test_index_folds,edx,get_pred_mean_movie_rounded),
-                                actual_rating =  edx[test_index_folds[[worst_fold_best_method]],]$rating) %>%
+  comp_mean_movie <- data.frame(
+    pred_mean_movie = get_pred_worstfold(rmse_folds_results,
+                                         test_index_folds,edx,get_pred_movie),
+    pred_mean_movie_rounded = get_pred_worstfold(rmse_folds_results,
+                                                 test_index_folds,edx,
+                                                 get_pred_mean_movie_rounded),
+    actual_rating = edx[test_index_folds[[worst_fold_best_method]],]$rating) 
+  
+  comp_mean_movie <- comp_mean_movie %>%
     mutate(sqdev = (pred_mean_movie - actual_rating)^2) %>%
     mutate(sqdev_rounded = (pred_mean_movie_rounded - actual_rating)^2) %>%
     mutate(sqdev_diff = sqdev-sqdev_rounded) %>%
@@ -957,61 +972,28 @@ if (load_output_data) {
     mutate(Dmse = mse_rounded - mse) %>%
     mutate(weighted_Dmse = count*Dmse)
   
-  # we see that although the predictions are improved in circa 3 times more cases than worsened, the worsening in terms of RMSE adds up to more than 
-  # the improvement for the cases where it is improved. 
-  # this can be seen looking at weighted mses for each type of change (worse, same, better)
-  # Further work on this could include checking whether the users/movies for which it is improved, non overlapping with the ones for which it is 
-  # worsened, to the point that it would be possible to discriminate a subset of users/movies on which to apply rounding or not and still achieve improvement.
-  # However to do this, we would need to create a further partition of one of the folds of the edx to create new unseen data on which to test this. This is 
-  # because to pick a method based on information obtained from the actual ratings, that information needs not to be be in the validation set.
+  #'we see that although the predictions are improved in circa 3 times more 
+  #'cases than worsened, the worsening in terms of RMSE adds up to more than
+  #'the improvement for the cases where it is improved. 
+  #' this can be seen looking at weighted mses for each type of change 
+  #' (worse, same, better) 
   
-  comp_mean_movie_category_summary <- data.frame(pred_mean_movie = get_pred_worstfold(rmse_folds_results,test_index_folds,edx,get_pred_movie),
-                                              pred_mean_movie_rounded = get_pred_worstfold(rmse_folds_results,test_index_folds,edx,get_pred_mean_movie_rounded)) %>%
-    bind_cols(edx[test_index_folds[[worst_fold_best_method]],]) %>%
-    rename(actual_rating = rating) %>%
-    mutate(sqdev = (pred_mean_movie - actual_rating)^2) %>%
-    mutate(sqdev_rounded = (pred_mean_movie_rounded - actual_rating)^2) %>%
-    mutate(sqdev_diff = sqdev-sqdev_rounded) %>%
-    mutate(sqdev_improved = case_when(sqdev_diff > 0 ~"better",
-                                      sqdev_diff < 0 ~"worse",
-                                      TRUE~ "same")) %>%
-    mutate(rmse_all = sqrt(mean(sqdev))) %>% 
-    mutate(mse_all = mean(sqdev)) %>% 
-    mutate(rmse_all_rounded = sqrt(mean(sqdev_rounded))) %>%
-    mutate(mse_all_rounded = mean(sqdev_rounded)) %>%
-    group_by(userId) %>%
-    mutate(nb_ratings = n()) %>%
-    group_by(userId,sqdev_improved) %>%
-    mutate(nb_ratings_improvecat = n()) %>%
-    mutate(improve_category = case_when(nb_ratings == nb_ratings_improvecat ~ "single",
-                                        TRUE ~ "mixed")) %>%
-    ungroup() %>%
-    group_by(improve_category,sqdev_improved) %>%
-    summarise(count_category = n(),
-              mse = mean(sqdev),
-              mse_rounded = mean(sqdev_rounded),
-              Dmse = mse_rounded - mse,
-              weighted_Dmse = count_category*Dmse
-              )  %>%
-    ungroup() %>%
-    mutate(contribution = weighted_Dmse/sum(count_category))
-  
-  # As can be seen from the summary table, even if we could come up with a cross validated set of users for which rounding improve result, at most we could 
-  # improve the result by 4e-05 (likely, the subset would be smaller hence impact also smaller), so we will not be making that effort.
-  
-  # As this model does not improve RMSE, the results will not be added to the rmse_folds_results dataframe and we will NOT apply systematic rounding in the
-  # models going forward.
+  #'As this model does not improve RMSE, the results will not be added to the 
+  #'rmse_folds_results dataframe and we will NOT apply systematic rounding 
+  #'in the models going forward.
 
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   ### Model: average by movie, with User Boundary Rounding ####
   
-  #Is there a minimum and maximum rating or more generally set of possible values that is specific enough to a user that prediction can be improved
-  #by setting those boundaries as the only possible values for boundaries / rounding ?
-  #By looking at the minimum and maximum rating given so far by each user, we apply a simpler rule which is that if a prediction is lower than the 
-  #lowest rating given so far by the user, that lower boundary is predicted instead. Similarly, if a prediction is higher than the highest rating given so far, 
-  #the prediction is changed to be equal to that higher boundary. This is based on the assumption that each user will have their idea of what is a 
-  #maximum and minimum rating, keeping to this rather than the full range.
+  #'By looking at the minimum and maximum rating given so far by each user, we 
+  #'apply a simple rule that if a prediction is lower (resp higher) than the 
+  #'lowest (resp higher) rating given so far by the user, that lower boundary 
+  #'is predicted instead. This is based on the assumption that each user will 
+  #'have their idea of what is a maximum and minimum rating, keeping to this 
+  #'rather than the full range.
   get_pred_mean_movie_rub <- function(training_set,test_set) {
     
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
@@ -1045,12 +1027,14 @@ if (load_output_data) {
                        get_pred_func = get_pred_mean_movie_rub,
                        verbose = TRUE)
   #RMSE = 0.943558937204152 for worst fold =  Fold01
-  #user based boundary rounding DOES improve results (result without rounding was 0.9446996).
-  #Therefore, in all further models, we will apply user boundaries rounding. 
-  #For conciseness we will not specify it in model descriptions
+  #'user based boundary rounding DOES improve results (result without rounding 
+  #'was 0.9446996).
+  #'Therefore, in all further models, we will apply user boundaries rounding. 
+  #'For conciseness we will not specify it in model descriptions.
   
     
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mean_movie_rub
+  #'adding the results by applying get_RMSE_folds with 
+  #'get_pred_func = get_pred_mean_movie_rub
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie",
@@ -1058,12 +1042,14 @@ if (load_output_data) {
                                                      edx,
                                                      get_pred_mean_movie_rub))))
  
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   ### Model: average by movie then user ####
   
-  #we predict that the rating for movie i, user u is t the sum of
-  #the movie effect and the user effect as recalculated using the baseline
-  #with movie effect included 
+  #'we predict that the rating for movie i, user u is t the sum of the movie 
+  #'effect and the user effect as recalculated using the baseline with movie 
+  #'effect included 
   get_pred_movie_user <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_movie <- training_set %>%
@@ -1085,31 +1071,41 @@ if (load_output_data) {
   }
   
   # RMSE on worst fold
-  RMSE_movie_user <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
-                       test_index_folds = test_index_folds,
-                       movielens_data = edx,
-                       get_pred_func = get_pred_movie_user,
-                       verbose = TRUE)
+  RMSE_movie_user <- check_RMSE_worstfold(
+    rmse_folds_results = rmse_folds_results,
+    test_index_folds = test_index_folds,
+    movielens_data = edx,
+    get_pred_func = get_pred_movie_user,
+    verbose = TRUE)
   #RMSE = 0.866792775519839 for worst fold =  Fold01
   
   ### Model: average by movie then user with Global Boundary Rounding ####
   
-  # Because there are now two effects incorporated the b_u effect can result in predictions outside 
-  # of the possible values which as we have seen in the data exploration section, is in the [0.5,5] range
-  # in increments of 0.5. This would happen for instance if the average rating over all movies was high
-  # then a particular user has consistently lower than average ratings. For a movie that is on average
-  # itself with a low rating, both the b_u and b_i would be negative with magnitude high enough to 
-  # result in a prediction outside of the range. 
-  pred_movie_user_worstfold <- get_pred_worstfold(rmse_folds_results,test_index_folds,edx,get_pred_movie_user)
+  #'Because there are now two effects incorporated the b_u effect can result in 
+  #'predictions outside of the possible values which as we have seen in the data
+  #' exploration section, is in the [0.5,5] range in increments of 0.5. This 
+  #' would happen for instance if the average rating over all movies was high 
+  #' then a particular user has consistently lower than average ratings. For a 
+  #' movie that is on average itself with a low rating, both the b_u and b_i 
+  #' would be negative with magnitude high enough to result in a prediction 
+  #' outside of the range. 
+  #' 
+  pred_movie_user_worstfold <- get_pred_worstfold(
+    rmse_folds_results,test_index_folds,edx,get_pred_movie_user)
   nb_pred_total <- length(pred_movie_user_worstfold)
-  nb_pred_outofrange <- length(pred_movie_user_worstfold[pred_movie_user_worstfold > 5 | pred_movie_user_worstfold <0.5])
+  nb_pred_outofrange <- length(
+    pred_movie_user_worstfold[
+      pred_movie_user_worstfold > 5 | pred_movie_user_worstfold <0.5
+      ]
+    )
   rm(pred_movie_user_worstfold)
   print(nb_pred_outofrange)
-  #2161 predicted ratings are indeed out of the actual possible range for ratings.
+  #'2161 predicted ratings are out of the actual possible range for ratings.
   
-  # To improve on this, for models with more than one effect, we can change any prediction that is lower 
-  # then 0.5 to 0.5 and any prediction that is higher than 5 to 5. This should improve the overall RMSE
-  # because any prediction that is outside of the possible range will be improved by the operation. 
+  #'To improve on this, for models with more than one effect, we can change any 
+  #'prediction that is lower then 0.5 to 0.5 and any prediction that is higher 
+  #'than 5 to 5. This should improve the overall RMSE because any prediction 
+  #'that is outside of the possible range will be improved by the operation. 
   get_pred_movie_user_ab <- function(training_set,test_set) {
     mu <- mean(training_set$rating)
     effect_movie <- training_set %>%
@@ -1133,19 +1129,23 @@ if (load_output_data) {
   }
   
   # RMSE on worst fold
-  RMSE_movie_user_globalboundary <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
-                       test_index_folds = test_index_folds,
-                       movielens_data = edx,
-                       get_pred_func = get_pred_movie_user_ab,
-                       verbose = TRUE)
+  RMSE_movie_user_globalboundary <- check_RMSE_worstfold(
+    rmse_folds_results = rmse_folds_results,
+    test_index_folds = test_index_folds,
+    movielens_data = edx,
+    get_pred_func = get_pred_movie_user_ab,
+    verbose = TRUE)
   #RMSE = 0.866596639311349 for worst fold =  Fold01
-  #this confirms improvement compared to the case without adjustment for allowed boundaries (0.8667928)
+  #'this confirms improvement compared to the case without adjustment for 
+  #'allowed boundaries (0.8667928)
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   ### Model: average by movie then user with Global Boundary Rounding followed by User Boundary Rounding ####
-  #we also apply user based boundaries adjustment and see if there is further improvement or if 
-  #the two adjustments are mutually exclusive
+  #'we also apply user based boundaries adjustment and see if there is further 
+  #'improvement or if the two adjustments are mutually exclusive
   get_pred_movie_user_ab_rub <- function(training_set,test_set) {
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
     user_pred_boundaries_training_set <- get_userboundaries_trainingset(training_set)
@@ -1183,16 +1183,22 @@ if (load_output_data) {
                        get_pred_func = get_pred_movie_user_ab_rub,
                        verbose = TRUE)
   #RMSE = 0.866507592226623 for worst fold =  Fold01
-  #further improvement on doing only allowed global boundaries adjustment (0.8665966)
+  #'further improvement by doing user based boundary adjustment compared to 
+  #'doing only allowed global boundaries adjustment (0.8665966)
   
-  #In all models below with more than 1 effect we will therefore apply in succession two adjustments : overall allowed boundaries adjustment and 
-  #user based boundary adjustment. It is clear that for users that have already submitted ratings, only applying the second adjustment will result
-  #in the same improvement since the minimum and maximum rating given by a user are within the allowed ranges. However this will not be the case for 
-  #new users with no submitted ratings so far. For all models incorporating more than one effect that is not user based, we will apply both effect. 
+  #'In all models below with more than 1 effect we will therefore apply in 
+  #'succession two adjustments : overall allowed boundaries adjustment and user 
+  #'based boundary adjustment. It is clear that for users that have already 
+  #'submitted ratings, only applying the second adjustment will result in the 
+  #'same improvement since the minimum and maximum rating given by a user are 
+  #'within the allowed ranges. However this will not be the case for new users 
+  #'with no submitted ratings so far. For all models incorporating more than one
+  #'effect that is not user based, we will apply both effect. 
   
   #Again for conciseness we will not specify it in the model description.
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mean_movie_user_ab_rub
+  #'adding the results by applying get_RMSE_folds with 
+  #'get_pred_func = get_pred_mean_movie_user_ab_rub
   rmse_folds_results <- rmse_folds_results %>%  
     bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
                         method="movie+user",
@@ -1201,12 +1207,14 @@ if (load_output_data) {
                                                      get_pred_movie_user_ab_rub))))
   
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   ### Model: average by movie then user then genres ####
-  #we predict that the rating for movie i, user u is the sum of
-  #the following effects in that order movie effect, user effect and 
-  #movie genres effect, each applied on the previous baseline.
+  #'we predict that the rating for movie i, user u is the sum of the following 
+  #'effects in that order movie effect, user effect and movie genres effect, 
+  #'each applied on the previous baseline.
   #we model the genres by taking directly the series of genres as a unique genre
   get_pred_movie_user_genres <- function(training_set,test_set) {
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
@@ -1259,16 +1267,22 @@ if (load_output_data) {
   #RMSE = 0.914505595301922 for worst fold =  Fold01
   #this is a worse model than movie+user model (0.8665076)
   
-  #Possible reasons for this being the case is the large number of genres with a small number of observations
+  #'Possible reasons for this being the case is the large number of genres with 
+  #'a small number of observations
   
-  # Because the model does not improve results, it will not be added to the results data frame. 
+  #'Because the model does not improve results, it will not be added to the 
+  #'results data frame. 
 
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
 
   ### Model: movie regularised ####
-  #we apply regularisation (see report for details) to the movie only model, using the parameter l_m (movie effet lambda) to 
-  #penalise movies with a small number of ratings and improve how well the model generalise to new data
-  #prediction function
+  #'we apply regularisation (see report for details on the method) to the movie 
+  #'only model, using the parameter l_m (movie effet lambda) to penalise movies 
+  #'with a small number of ratings and improve how well the model generalise to 
+  #'new data 
+  
   get_pred_m_reg <- function(training_set,
                              test_set,
                              user_pred_boundaries_training_set,
@@ -1305,12 +1319,15 @@ if (load_output_data) {
     return(pred_mean_movie_reg)
   }
   
-  # We define a function giving the RMSE of the movie only regularised model for the worst fold and a given value of Lambda.
-  # This function will then be used to find the optimal lambda minimising the RMSE on that fold. 
-  # To speed up the process, we extract the dataframe countaining the minimum and maximum rating for each user in 
-  # the training set, user_pred_boundaries_training_set using the function get_userboundaries_trainingset. We then 
-  # provide it as an input to get_pred_m_reg, as it will  be the same for each evaluation of get_pred_m_reg, thereby 
-  # saving time in the minimizing process.
+  #' We define a function giving the RMSE of the movie only regularised model 
+  #' for the worst fold and a given value of Lambda. This function will then be 
+  #' used to find the optimal lambda minimising the RMSE on that fold. To speed 
+  #' up the process, we extract the dataframe countaining the minimum and 
+  #' maximum rating for each user in  the training set, 
+  #' user_pred_boundaries_training_set using the function 
+  #' get_userboundaries_trainingset. We then  provide it as an input to 
+  #' get_pred_m_reg, as it will  be the same for each evaluation of 
+  #' get_pred_m_reg, thereby saving computational time in the minimizing process.
   worst_fold_best_method <- get_worst_fold_best_method(rmse_folds_results)
   user_pred_boundaries_training_set_worstfold <- get_userboundaries_trainingset(edx[-test_index_folds[[worst_fold_best_method]],][,c(1,3)])
   save_input_data()
@@ -1462,7 +1479,9 @@ if (load_output_data) {
   #0.94350736 which is worse than the movie + user model (0.866793)
   #Because this model is not as good as the movie + user model, it will not be added to the results data frame.
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   ### Model: Model: movie then user regularised ####
   
   #we predict that the rating for movie i, user u is t the sum of
@@ -1617,7 +1636,9 @@ if (load_output_data) {
                                                      edx,
                                                      get_pred_mu_reg_trained))))
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   ### Model: movie then user then genres regularised #### 
   
@@ -1798,7 +1819,9 @@ if (load_output_data) {
                                                      get_pred_mug_reg_trained)))) 
   
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
 
   ### Model: movie then user then individual genres ####
   
@@ -1884,7 +1907,9 @@ if (load_output_data) {
                                                      edx,
                                                      get_pred_mu_indgenres)))) 
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   ### Model: movie then user then indgenres for all users then indgenres for ind users ####
   #we now consider the effect of individual genres but instead of applying the effect directly for each user, 
@@ -1984,7 +2009,9 @@ if (load_output_data) {
   #this is slightly worse than the simple movie +user + individual genres (0.851451518686382)
   # therefore we will not be adding the results to the results dataframe.
 
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   
   ### Model: movie+user+indgenres reg  ####
@@ -2087,7 +2114,9 @@ if (load_output_data) {
   Lambda_Min_RMSE_worst_fold_muig <- Details_Lambda_Min_RMSE_worst_fold_muig$Output
   print(Lambda_Min_RMSE_worst_fold_muig) #2.229124
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   #multiple lambdas - we attempt getting to a lower RMSE by using minimising lambda
   #obtained for simpler model (movie + user) and varying only the lambda for the
@@ -2147,7 +2176,9 @@ if (load_output_data) {
                                                      get_pred_func = get_pred_muig_reg_trained
                                                      ))))
  
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   ### Model: movie+user+indgenres+releaseyear reg  ####
   
   #we predict that the rating for movie i, user u is t the sum of
@@ -2294,7 +2325,9 @@ if (load_output_data) {
   min(Details_Lambda_Min_RMSE_worst_fold_muigy$SearchRecord$Val) #0.8495612
   min(Details_Lambda_Min_RMSE_worst_fold_mu_ig_y$SearchRecord$Val) #0.8464639
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   #for this model having separate lambdas gives lower RMSE so the model with different lambda is added
   #to the results
@@ -2331,7 +2364,9 @@ if (load_output_data) {
                                                      get_pred_func = get_pred_mu_ig_y_reg_trained
                                                      ))))    
 
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   ### Model: movie+user+indgenres+releaseyear reg+timestamp ####
   
   #we predict that the rating for movie i, user u is t the sum of
@@ -2520,7 +2555,9 @@ if (load_output_data) {
     )
   }
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   
   #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mu_ig_y_t_reg_trained
   rmse_folds_results <- rmse_folds_results %>%  
@@ -2531,7 +2568,9 @@ if (load_output_data) {
                                                      get_pred_func = get_pred_mu_ig_y_t_reg_trained
                                                      )))) 
   
-  savecount <- save_output_data(savenum = savecount, save_output = !load_output_data) #incremental save
+  #incremental save
+  savecount <- save_output_data(savenum = savecount, 
+                                save_output = !load_output_data)
   run_output_data_end_time <- Sys.time()
   run_output_data_duration <- run_output_data_end_time - run_output_data_start_time 
   print(run_output_data_duration) #Time difference of 5.718817 hours
@@ -2644,7 +2683,7 @@ if (file.exists("Data/Output_021.RData")) {
           axis.ticks.x=element_blank()) 
   print(p_rmse_bestmethods_pointline)
   
-  #savecount <- save_output_data(savenum = savecount, save_output = TRUE)
+  #save section output
   save_output_data(savenum = savecount, 
                    save_output = TRUE,
                    objectlist = c(
@@ -2705,7 +2744,7 @@ if (file.exists("Data/Output_022.RData")) {
   #It is lower than the corresponding worst fold RMSE for that model (0.8514515)
   #this makes the point that we cannot fully predict the result on the unseen data.
   
-  
+  #save section output
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = TRUE,
                                 objectlist <- c("final_pred_RMSE",
