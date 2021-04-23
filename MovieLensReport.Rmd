@@ -264,6 +264,7 @@ More details on this method can be found at the following wikipedia page  [Golde
 Example of the method used in the context of this study can be found in section [RMSE function Minimum Search].
 
 # Results
+
 ## Simplified Cross Validation Results
 
 ### Summary
@@ -286,18 +287,20 @@ index_min_RMSE_nonreg <- rmse_folds_results_summary$method == method_min_RMSE_no
 
 ```
 
-The best model considered is one that incorporates the following effects: *`r rmse_folds_results_summary$method[index_min_RMSE]`* achieving a median RMSE of *`r rmse_folds_results_summary$median_RMSE[index_min_RMSE]`* with a maximum RMSE of **`r  rmse_folds_results_summary$max_RMSE[index_min_RMSE]`** obtained on `r worst_fold_best_method` i.e. every fold out of the 10 randomly generated Folds on the training data beat the lowest target RMSE = `r rmse_target_25` hereby achieving the objective set in section [Meeting the challenge objectives].
+The best model considered is one that incorporates the following effects: *`r rmse_folds_results_summary$method[index_min_RMSE]`* achieving a median RMSE of *`r rmse_folds_results_summary$median_RMSE[index_min_RMSE]`* with a maximum RMSE of **`r  rmse_folds_results_summary$max_RMSE[index_min_RMSE]`** obtained on `r worst_fold_best_method`. 
 
-The best model without regularisation incorporates the following effects: `r method_min_RMSE_nonreg` achieving a median RMSE of *`r rmse_folds_results_summary$median_RMSE[index_min_RMSE_nonreg]`* with a maximum RMSE of **`r  rmse_folds_results_summary$max_RMSE[index_min_RMSE_nonreg]`** obtained on `r worst_fold_best_method` i.e. each of the 10 randomly generated Folds on the training data beat the lowest target RMSE = `r rmse_target_25`. 
+The best model without regularisation incorporates the following effects: `r method_min_RMSE_nonreg` achieving a median RMSE of *`r rmse_folds_results_summary$median_RMSE[index_min_RMSE_nonreg]`* with a maximum RMSE of **`r  rmse_folds_results_summary$max_RMSE[index_min_RMSE_nonreg]`** obtained on `r worst_fold_best_method`. 
 
-The following models also achieve the objective set to beat the lowest target RMSE:
+Since every fold out of the 10 randomly generated Folds on the training data beat the lowest target RMSE = `r rmse_target_25` we achieved the objective set in section [Meeting the challenge objectives] for a reasonable expectation to beat the target on future unseen data for both of those models.
+
+The following models also achieved the objective set to beat the lowest target RMSE:
 
 ```{r, results='asis'}
 methods_betterthantarget <- rmse_folds_results_summary %>% 
   ungroup() %>%
   filter(!(method %in% c(method_min_RMSE,method_min_RMSE_nonreg))) %>%
   filter(max_RMSE < rmse_target_25) %>%
-  mutate(method_result_string = paste0(method," (max_RMSE=",max_RMSE,")")) %>%
+  mutate(method_result_string = paste0(method," (max_RMSE = **",round(max_RMSE,5),"**)")) %>%
   pull(method_result_string)
 
 for (method_result_string in methods_betterthantarget){
@@ -305,7 +308,7 @@ for (method_result_string in methods_betterthantarget){
 }
 ```
 
-The full simplified cross validation results for the models considered can be found in Table \ref{tab:results-table} and Table \ref{tab:results-summary-table}, ordered by descending mean RMSE (increasing mean prediction accuracy) over the 10 folds randomly generated.
+The full simplified cross validation results for the models considered can be found in Table \ref{tab:results-table} and Table \ref{tab:results-summary-table}, ordered by descending mean RMSE (increasing mean prediction accuracy) over the 10 folds randomly generated, and located in the [Full Simplified Cross Validation Results] section of the [Appendix].
 
 ### Visualisations
 
@@ -323,7 +326,7 @@ print(p_rmse_bestmethods_boxplot)
 
 Figure \ref{fig:rmse-bestmethods-boxplot-zoom} is the same plot, with only the models with RMSE below 0.88. It shows clearly that a model just including movie+users even with regularisation does not allow to achieve the RMSE target of `r rmse_target_25` for all folds, so makes the case to have considered more complex models with additional effects. 
 
-It also shows that the lowest target RMSE is beaten with a significant margin. 
+It also shows that the lowest target RMSE of *`r rmse_target_25`* is beaten with a significant margin by 5 of the models. 
 
 ```{r label = rmse-bestmethods-boxplot-zoom, fig.cap = "RMSE variation with models (below 0.88 RMSE only)"}
 #, out.extra='angle = 90'
@@ -336,10 +339,103 @@ It also provides verification that the simplified cross validation method descri
 print(p_rmse_bestmethods_pointline)
 ```
 
+## Final model prediction on validation set
+
+Using the best models derived, it is now possible to calculate the RMSE on the unseen data contained in the *validation* set. To do so, the model is trained one last time on the whole *edx* (training) set, using the lambda parameter previously derived from simplified cross validation on the worst fold (fold01) (with verification on the other 9 folds), then a prediction is made on the *validation* set for which we calculate the RMSE. 
+
+Doing so yields the following result: 
+
+* **`r final_pred_RMSE`** for the *movie+user+indgenres+releaseyear+timestamp reg* model 
+* **`r final_pred_fast_RMSE`** for the *movie+user+indgenres* model 
+
+Both models do beat the lowest target RMSE of *`r rmse_target_25`* by a significant margin. 
+
+Also we observe that both RMSE values are lower than the RMSE obtained on the "worst fold" during the 10 folds simplified cross validation. 
+
+This reinforces the idea that the proposed method to use the worst fold to provide a conservative estimate of what to expect on unseen data and to tune the regularised models parameters on that worst fold, was reasonable. 
+
+The prediction on the validation set was was produced *`r round(as.double(duration)/as.double(duration_fast),2)`* times slower for the regularised model compared to the non regularised model. To this should be added the time required to tune the lambda parameters of the regularised model during simplified cross validation. This highlights that depending on the target RMSE choices the non regularised model appears like a good choice if speed of execution is a factor.
+
+# Conclusion and Future Work
+
+Using a model that incorporated the effects of movie, user, date of rating, individual genres and release year to account for the variation in ratings, it was possible to reach predictions in movie ratings for unseen data with a RMSE below 0.85, beating the lowest RMSE target of `r rmse_target_25`.
+
+The exploration of models has shown that regularisation brings improvement in predictions. Furthermore it was observed that using different lambda parameters for the different effects can bring further improvements in some cases. The effect of rounding predictions to the nearest allowed values ws considered but did not bring improvements. However considering the boundaries of the ratings for each user, it was possible to reduce the RMSE. See section [Refinements brought to Models] for more details.
+
+Further improvement might be possible by using full cross validation whereby the lambda values are obtained by minimising a modified RMSE function that gives the average of the RMSE across the folds. This was not done, in order to shorten the run times of the training of the models (since each modified RMSE evaluation would require a number of computation K times higher, if K is the number of folds). 
+
+Further models could also be used to reach further reduction in RMSE, such as matrix factorisation applied on the residuals of the best model. 
+
+It would also be of value to consider what happens when sparse data is not removed from the training set. That is, when we allow for data in the validation set to contain both movies and users which are not present in the training set. This would be a more general situation closer to reality as it would correspond to new movies added to the library or new users joining the system. 
+
+# Appendix 
+
+## Refinements brought to Models
+### Rating Rounding / Adjustments
+
+As discussed in section [Ratings spread], The possible values for user given ratings are discrete and the possible values are: *[`r seq(0.5,5,0.5)`]*.
+
+There was one more applied adjustment to the predictions based on the allowed interval that was an immediate win. Indeed for models that have more than one effect, the prediction can end up being outside of the possible interval for actual rating. Taking the first model with two effects, movie+users, we find that for the worst fold, the number of predictions which are lower than 0.5 or higher than 5 is *`r nb_pred_outofrange`* out of *`r nb_pred_total`*. We therefore adjust any rating below 0.5 to 0.5 and any rating above 5 to 5. Adjusting for global boundary reduced the RMSE from the original *`r RMSE_movie_user`* to *`r RMSE_movie_user_globalboundary`*. We then also checked that applying user boundary after global boundary adjustment gave a further reduction in RMSE, which was the case as we reached a RMSE of *`r RMSE_movie_user_globalthenuserboundary`*. This was done because in cases where a user has not rated movies yet there will be no rating boundary information available.
+
+We considered the effect of rounding the results to the nearest allowed ratings but this did not bring improvements. The movie model without any rounding yielded a RMSE of *`r RMSE_movie`* while the rounded model yielded a higher RMSE of *`r RMSE_movie_rounded`* when applying rounding only to the nearest whole rating, for users who had only given whole ratings, and only for predictions that were within 0.1 of a whole rating.
+
+Next we considered the effect of user boundaries in their ratings. We rounded all predictions down (resp up) to the user maximum (resp minimum) rating given thus far if they were found to be greater (resp lower) than that user maximum (resp minimum) rating. This was based on the assumption that each user might have their idea of what is a maximum and minimum rating, keeping to this rather than the full range. By doing so, we yielded a *lower* RMSE of *`r RMSE_movie_userboundary`*. As a result we applied this adjustment for all further models without specifying it in the model descriptions for conciseness. 
+
+We also applied adjustment on the predictions based on the allowed interval that was an immediate win. Indeed for models that have more than one effect, the prediction can end up being outside of the possible interval for actual rating. Taking the first model with two effects, movie+users, we found that for the worst fold, the number of predictions which are lower than 0.5 or higher than 5 is *`r nb_pred_outofrange`* out of *`r nb_pred_total`*. We therefore adjusted any rating below 0.5 to 0.5 and any rating above 5 to 5. Adjusting for global boundary reduced the RMSE from the original *`r RMSE_movie_user`* to *`r RMSE_movie_user_globalboundary`*. We then also checked that applying user boundary after global boundary adjustment gave a further reduction in RMSE, which was the case as we reached a RMSE of *`r RMSE_movie_user_globalthenuserboundary`*. This was done because in cases where a user has not rated movies yet there will be no rating boundary information available.
+
+Considering the above, for all models with more than one effect, we have applied global then user boundary adjustment, without specifying it in the model descriptions for conciseness.
+
+### Multiple Lambda vs Single Lambda Regularisation
+
+When considering models that were regularised, we have considered two cases: 
+
+* a single lambda parameter was used across all effects
+* one specific lambda parameter for each new effect when adding a new effect
+
+```{r label = SingleVsMultipleLambdaComp-table}
+library(knitr)
+library(kableExtra)
+
+SingleVsMultipleLambdaComp_table <- SingleVsMultipleLambdaComp %>%
+  mutate(BestModel = if_else(SingleLambdaRMSE < MultipleLambdaRMSE,"Single Lambda","Multiple Lambdas"))
+
+kable(x=SingleVsMultipleLambdaComp_table,caption=paste("Single vs Multiple Lambda RMSE Comparison")) %>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position","repeat_header"),
+                repeat_header_continued = T)
+
+```
+
+Results were found to be better with a single Lambda for the following models : 
+
+```{r, results='asis'}
+methods_singlelambdabetter <- SingleVsMultipleLambdaComp_table%>% 
+  filter(BestModel == "Single Lambda") %>%
+  pull(method)
+
+for (method_result_string in methods_singlelambdabetter){
+  cat("*", method_result_string, "\n")
+}
+```
+
+Results were found to be better with multiple lambdas for the following models:
+
+```{r, results='asis'}
+methods_multiplelambdabetter <- SingleVsMultipleLambdaComp_table%>% 
+  filter(BestModel == "Multiple Lambdas") %>%
+  pull(method)
+for (method_result_string in methods_multiplelambdabetter){
+  cat("*", method_result_string, "\n")
+}
+```
+
+In all regularised models, we reported the version (single  or multiple lambdas) that gave the lowest RMSE.
+
+
 \newpage
 \blandscape
 
-### Full Results
+## Full Simplified Cross Validation Results
 
 Similarly to the [Visualisations] section, we have colour coded the RMSE results, as follow :
 
@@ -361,7 +457,7 @@ library(tidyverse)
   # rmse_target_10 <- 0.89999
 
 rmse_folds_results_table <- rmse_folds_results %>%
-  select(-do_remove_sparse) %>%
+  select(-do_remove_sparse,-get_pred_func_name) %>%
   mutate(across(where(is.double), function(x) {round(x,5)}))
 
 names(rmse_folds_results_table) <- c("method",paste("Fold",seq(10)))
@@ -466,7 +562,7 @@ options(digits = 5)   # report 3 significant digits
 \elandscape
 \newpage
 
-```{r label = results-sumary-table}
+```{r label = results-summary-table}
 library(knitr)
 library(kableExtra)
 
@@ -516,94 +612,6 @@ kable(x=rmse_folds_results_summary_table,
                 repeat_header_continued = T)
 
 ```
-
-## Refinements to Models
-### Rating Rounding
-
-As discussed in section [Ratings spread], The possible values for user given ratings are discrete and the possible values are: *[`r seq(0.5,5,0.5)`]*.
-
-We considered the effect of rounding the results to the nearest allowed ratings but this did not bring improvements. The movie model without any rounding yielded a RMSE of *`r RMSE_movie`* while the rounded model yielded a higher RMSE of *`r RMSE_movie_rounded`* when applying rounding only to the nearest whole rating, for users who had only given whole ratings, and only for predictions that were within 0.1 of a whole rating.
-
-Next we considered the effect of user boundaries in their ratings. By looking at the minimum and maximum rating given so far by each user, we apply a simpler rule which is that if a prediction is lower than the lowest rating given so far by the user, that lower boundary is predicted instead. Similarly, if a prediction is higher than the highest rating given so far, the prediction is changed to be equal to that higher boundary. This is based on the assumption that each user will have their idea of what is a maximum and minimum rating, keeping to this rather than the full range. By doing so, we yielded a lower RMSE of `r RMSE_movie_userboundary`. As a result we have applied this adjustment for all further models without specifying it in the model descriptions for conciseness. 
-
-There was one more applied adjustment to the predictions based on the allowed interval that was an immediate win. Indeed for models that have more than one effect, the prediction can end up being outside of the possible interval for actual rating. Taking the first model with two effects, movie+users, we find that for the worst fold, the number of predictions which are lower than 0.5 or higher than 5 is *`r nb_pred_outofrange`* out of *`r nb_pred_total`*. We therefore adjust any rating below 0.5 to 0.5 and any rating above 5 to 5. Adjusting for global boundary reduced the RMSE from the original *`r RMSE_movie_user`* to *`r RMSE_movie_user_globalboundary`*. We then also checked that applying user boundary after global boundary adjustment gave a further reduction in RMSE, which was the case as we reached a RMSE of *`r RMSE_movie_user_globalthenuserboundary`*. This was done because in cases where a user has not rated movies yet there will be no rating boundary information available.
-
-Considering the above, for all models with more than one effect, we have applied global then user boundary adjustment, without specifying it in the model descriptions for conciseness.
-
-### Multiple Lambda vs Single Lambda Regularisation
-
-When considering models that were regularised, we have considered two cases: 
-
-* a single lambda parameter was used across all effects
-* one specific lambda parameter for each new effect when adding a new effect
-
-```{r label = SingleVsMultipleLambdaComp-table}
-library(knitr)
-library(kableExtra)
-
-SingleVsMultipleLambdaComp_table <- SingleVsMultipleLambdaComp %>%
-  mutate(BestModel = if_else(SingleLambdaRMSE < MultipleLambdaRMSE,"Single Lambda","Multiple Lambdas"))
-
-kable(x=SingleVsMultipleLambdaComp_table,caption=paste("Single vs Multiple Lambda RMSE Comparison")) %>%
-  kable_styling(full_width = F) %>%
-  kable_styling(latex_options = c("striped", "HOLD_position","repeat_header"),
-                repeat_header_continued = T)
-
-```
-
-Results were found to be better with a single Lambda for the following models : 
-
-```{r, results='asis'}
-methods_singlelambdabetter <- SingleVsMultipleLambdaComp_table%>% 
-  filter(BestModel == "Single Lambda") %>%
-  pull(method)
-
-for (method_result_string in methods_singlelambdabetter){
-  cat("*", method_result_string, "\n")
-}
-```
-
-Results were found to be better with multiple lambdas for the following models:
-
-```{r, results='asis'}
-methods_multiplelambdabetter <- SingleVsMultipleLambdaComp_table%>% 
-  filter(BestModel == "Multiple Lambdas") %>%
-  pull(method)
-for (method_result_string in methods_multiplelambdabetter){
-  cat("*", method_result_string, "\n")
-}
-```
-
-## Final model prediction on validation set
-
-Using the best models derived, it is now possible to calculate the RMSE on the unseen data contained in the *validation* set. To do so, the model is trained one last time on the whole *edx* (training) set, using the lambda parameter previously derived from simplified cross validation on the worst fold (fold01) (with verification on the other 9 folds), then a prediction is made on the *validation* set for which we calculate the RMSE. 
-
-Doing so yields the following result: 
-
-* **`r final_pred_RMSE`** for the *movie+user+indgenres+releaseyear+timestamp reg* model 
-* **`r final_pred_fast_RMSE`** for the *movie+user+indgenres* model 
-
-As expected, both models do beat the lowest target RMSE of `r rmse_target_25` by a significant margin. 
-
-We observe that the RMSE results is lower than than the highest RMSE observed during 10 folds simplified cross validation for the *movie+user+indgenres* model. However it is higher than than the highest RMSE observed during 10 folds simplified cross validation for the *movie+user+indgenres+releaseyear+timestamp reg* model. This highlights that RMSE achieved in the cross validation stage do not directly translate to general data and therefore that given an objective, it was preferable to derive a model achieving a significantly lower RMSE than our target during simplified cross validation.
-
-The non regularised model results was produced roughly 3 times faster than the regularised model, at the final prediction stage. To this should be added the time required to tune the lambda parameters of the regularised model during simplified cross validation. This highlights that depending on the target RMSE we can use a simpler model for speed of execution.
-
-# Conclusion and Future Work
-
-Using a model that incorporated the effects of movie, user, date of rating, individual genres and release year to account for the variation in ratings, it was possible to reach predictions in movie ratings for unseen data with a RMSE below 0.85, beating the lowest RMSE target of `r rmse_target_25`.
-
-The exploration of models has shown that regularisation brings improvement in predictions. Furthermore it was observed that using different lambda parameters for the different effects can bring further improvements in some cases. The effect of rounding predictions to the nearest allowed values ws considered but did not bring improvements. However considering the boundaries of the ratings for each user, it was possible to reduce the RMSE. 
-
-Further improvement might be possible by using full cross validation whereby the lambda values are obtained by minimising a modified RMSE function that gives the average of the RMSE across the folds. This was not done, in order to shorten the run times of the training of the models (since each modified RMSE evaluation would require a number of computation K times higher, if K is the number of folds). 
-
-Further models could also be used to reach further reduction in RMSE, such as matrix factorisation applied on the residuals of the best model. 
-
-It would also be of value to consider what happens when sparse data is not removed from the training set. That is, when we allow for data in the validation set to contain both movies and users which are not present in the training set. This would be a more general situation closer to reality as it would correspond to new movies added to the library or new users joining the system. 
-
-<!-- a conclusion section that gives a brief summary of the report, its limitations and future work -->
-
-# Appendix 
 
 ## RMSE function Minimum Search
 

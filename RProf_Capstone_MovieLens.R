@@ -196,8 +196,9 @@ get_pred_worstfold <- function(rmse_folds_results,test_index_folds,movielens_dat
   pred_worstfold <- get_pred_fold(test_index_folds,worst_fold_best_method,movielens_data,get_pred_func)
   return (pred_worstfold)
 }
-
 ## Function check_RMSE_worstfold ####
+#' gives RMSE value of the prediction function get_pred_func for the worst fold 
+#' so far in rmse_folds_results
 check_RMSE_worstfold <- function(rmse_folds_results,test_index_folds,movielens_data,get_pred_func,verbose = FALSE) {
   #getting worst fold best method
   worst_fold_best_method <- get_worst_fold_best_method(rmse_folds_results)
@@ -466,6 +467,76 @@ Find_Get_Val_Local_Minimum_Golden <- function(X_Min,X_Max,
   )
 }
 
+## Function append_get_pred_func ####
+append_get_pred_func <- function(pred_functions_df,
+                                 method_added,
+                                 get_pred_func_name_added) {
+  
+  #' empty dataframe to contain the pred functions. If the data frame already 
+  #' exists then it is kept ready to be appended to 
+  if (!exists(deparse(substitute(pred_functions)))) {
+    pred_functions_df <- data.frame()
+  }
+  
+  #' we filter out any existing pred_func with the same
+  #' method name prior to appending new results ensuring unique values
+  if(nrow(pred_functions_df >0)) {
+    pred_functions_df <- pred_functions_df %>% 
+      filter(method != method_added)
+  }
+
+  pred_functions_df <- pred_functions_df %>%
+    bind_rows(data.frame(method = method_added, 
+                         get_pred_func_name = get_pred_func_name_added)
+  )
+}
+
+## Function produce_append_rmse_results ####
+#' produces the RMSE results for all folds and append them to a results data 
+#' frame or create a data frame if it does not exist.
+produce_append_rmse_folds_results <- function(rmse_folds_results_df,
+                                              do_remove_sparse,
+                                              method_added,
+                                              get_pred_func_name,
+                                              test_index_folds,
+                                              movielens_data,
+                                              test_replace = TRUE) {
+  
+  #' empty dataframe to contain the RMSE results. If the data frame already 
+  #' exists then it is kept ready to be appended to 
+  if (!exists(deparse(substitute(rmse_folds_results_df)))) {
+    rmse_folds_results_df <- data.frame()
+  }
+  
+  rmse_method_folds <- get_RMSE_folds(
+    test_index_folds,
+    movielens_data,
+    get(get_pred_func_name) 
+  )
+  
+  if (length(rmse_method_folds) != length(test_index_folds)) {
+    stop("rmse folds calculation yielded less elements than number of folds")
+  }
+  
+  if (test_replace & (nrow(rmse_folds_results_df) >0)) {
+    #' we filter out any existing results with the same
+    #' method name prior to appending new results
+    rmse_folds_results_df <- rmse_folds_results_df %>% 
+      filter(method != method_added)
+  }
+  
+  rmse_folds_results_df <- rmse_folds_results_df %>%  
+    bind_rows(
+      bind_cols(
+        do_remove_sparse = do_remove_sparse,
+        get_pred_func_name = get_pred_func_name,
+        method=method_added,
+        as.data.frame(rmse_method_folds)
+      )
+    )
+}
+
+
 ## Function save_input_data ####
 #Function to save the static input data, which will not change throughout 
 #the script once created
@@ -474,7 +545,7 @@ save_input_data <- function() {
   candidateobjectlist <- c("edx",
                            "validation", 
                            "test_index_folds", 
-                           "release_years_ratings",
+                           "release_years",
                            "timestamp_day_rating",
                            "do_remove_sparse", 
                            "worst_fold_best_method")  
@@ -507,7 +578,7 @@ save_output_data <- function(savenum,save_output,objectlist) {
     objectlist <- objectlist[objectlist != "edx" & 
                                objectlist != "validation" &
                                objectlist != "test_index_folds" &
-                               objectlist != "release_years_ratings" &
+                               objectlist != "release_years" &
                                objectlist != "timestamp_day_rating"]
 
     #excluding loading logic objects so they do not get overwritten upon loading
@@ -595,7 +666,6 @@ if (load_input_data) {
   edx <- temp$training_set
   validation <- temp$test_set
   rm(temp)
-  rm(movielens)
   
   #Split edx in training and testing set 10 times 
   #this is so model parameters can be tuned 
@@ -612,7 +682,7 @@ if (load_input_data) {
   #the genres field is a string made of the concatenation of individual genres
   #separated by the symbol "|"
   gc()
-  indgenres_movie_summary <- edx %>% 
+  indgenres_movie_summary <- movielens %>% 
     select(movieId,genres) %>%
     unique() %>%
     mutate(indgenres = strsplit(genres, "\\|")) %>% #split string into a list
@@ -630,51 +700,29 @@ if (load_input_data) {
   #the movie release year is contained as part of the movie title
   #it is located within brackets at the end of each title string
   #it is extracted by data wrangling using regex pattern \\((\\d{4})\\)$"
-  
-  release_years <- edx %>%
+  release_years <- movielens %>%
     select(movieId,title) %>%
     unique() %>%
     mutate(release_year = as.numeric(str_match(string = title, 
                                                pattern = "\\((\\d{4})\\)$")[,2])) %>%
     select(movieId,release_year)  
-  
-  release_years_ratings <- edx %>%
-    left_join(release_years,by="movieId") %>%
-    select(movieId,release_year,rating)
-  
-  mu <- mean(edx$rating)
-  
-  release_years_ratings_summary <- release_years_ratings %>%
-    group_by(release_year) %>%
-    summarise(nb_ratings = n(),
-              nb_movies = n_distinct(movieId),
-              dev_mean_rating =mean(rating)-mu,
-              mean_rating =mean(rating),
-              sd_rating = sd(rating)
-    ) %>%
-    ungroup() %>%
-    mutate(rating_per_movie = nb_ratings/nb_movies)
-  
-  p_ry_ratingsvsmovie <- release_years_ratings_summary %>%
-    pivot_longer(names_to = "metric",cols = c(rating_per_movie,nb_movies,dev_mean_rating)) %>%
-    ggplot(aes(release_year,value,fill=metric)) +
-    geom_col() +
-    facet_grid(metric~.,scales = "free")
-  print(p_ry_ratingsvsmovie) 
-  
+
   ### Timestamp extraction ####
   #timestamps are converted to date using the lubridate package function
   #as_datetime
-  timestamp_day_rating <- edx %>%
+  timestamp_day_rating <- movielens %>%
     select(timestamp) %>%
     unique() %>%
     mutate(time_rating = as.character(round_date(as_datetime(timestamp),"day")))
+  
+  rm(movielens)
   
   run_input_data_end_time <- Sys.time()
   run_input_data_duration <- run_input_data_end_time - run_input_data_start_time 
   print(run_input_data_duration) #Time difference of 
   #saving produced input data in Input.RData for future retrieval
   save_input_data()
+ 
 }
 
 # OUTPUT DATA CREATION (data exploration, prediction models training and runs)####
@@ -750,6 +798,29 @@ if (load_output_data) {
     ggplot(aes(indgenres,nb_movies)) +
     geom_col() +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+  
+  mu <- mean(edx$rating)
+  
+  #release years exploration
+  release_years_ratings_summary <- edx %>%
+    left_join(release_years,by="movieId") %>%
+    select(movieId,release_year,rating) %>%
+    group_by(release_year) %>%
+    summarise(nb_ratings = n(),
+              nb_movies = n_distinct(movieId),
+              dev_mean_rating =mean(rating)-mu,
+              mean_rating =mean(rating),
+              sd_rating = sd(rating)
+    ) %>%
+    ungroup() %>%
+    mutate(rating_per_movie = nb_ratings/nb_movies)
+  
+  p_ry_ratingsvsmovie <- release_years_ratings_summary %>%
+    pivot_longer(names_to = "metric",cols = c(rating_per_movie,nb_movies,dev_mean_rating)) %>%
+    ggplot(aes(release_year,value,fill=metric)) +
+    geom_col() +
+    facet_grid(metric~.,scales = "free")
+  print(p_ry_ratingsvsmovie) 
 
   ## PREDICTION MODELS COMPARISON ####
   #' This section will generate RMSE for successive models, from scratch and 
@@ -773,20 +844,18 @@ if (load_output_data) {
   get_pred_mean <- function(training_set,test_set) {
     return(mean(training_set$rating))
   }
-  
-  #empty dataframe to contain the RMSE results 
-  if (!exists("rmse_folds_results")) {
-    rmse_folds_results <- data.frame()
-  }
-  
-  #' add• the results by applying get_RMSE_folds with 
+
+  #' add the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_mean
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="average",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_mean))))
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "average",
+    get_pred_func_name = "get_pred_mean",
+    test_index_folds,
+    movielens_data = edx
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data) 
@@ -818,15 +887,17 @@ if (load_output_data) {
                        get_pred_func = get_pred_user,
                        verbose = TRUE)
   #RMSE = 0.979776212801374 for worst fold =  Fold01
-  
-  #' adding the results by applying get_RMSE_folds with 
-  #' get_pred_func = get_pred_mean_user
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="user",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_user))))
+
+  #' adding the results by applying produce_append_rmse_folds_results with 
+  #' get_pred_func = get_pred_user
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "user",
+    get_pred_func_name = "get_pred_user",
+    test_index_folds,
+    movielens_data = edx
+  )
 
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
@@ -994,7 +1065,7 @@ if (load_output_data) {
   #' is predicted instead. This is based on the assumption that each user will 
   #' have their idea of what is a maximum and minimum rating, keeping to this 
   #' rather than the full range.
-  get_pred_mean_movie_rub <- function(training_set,test_set) {
+  get_pred_movie_rub <- function(training_set,test_set) {
     
     #getting minimum and maximum boundaries for ratings given by each user in the trainingset
     user_pred_boundaries_training_set <- get_userboundaries_trainingset(training_set)
@@ -1024,7 +1095,7 @@ if (load_output_data) {
   RMSE_movie_userboundary <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
                        test_index_folds = test_index_folds,
                        movielens_data = edx,
-                       get_pred_func = get_pred_mean_movie_rub,
+                       get_pred_func = get_pred_movie_rub,
                        verbose = TRUE)
   #RMSE = 0.943558937204152 for worst fold =  Fold01
   #' user based boundary rounding DOES improve results (result without rounding 
@@ -1032,19 +1103,21 @@ if (load_output_data) {
   #' Therefore, in all further models, we will apply user boundaries rounding. 
   #' For conciseness we will not specify it in model descriptions.
   
-    
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_mean_movie_rub
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_mean_movie_rub))))
- 
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie",
+    get_pred_func_name = "get_pred_movie_rub",
+    test_index_folds,
+    movielens_data = edx
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
+  
   ### Model: average by movie then user ####
   
   #' we predict that the rating for movie i, user u is t the sum of the movie 
@@ -1197,16 +1270,17 @@ if (load_output_data) {
   
   #Again for conciseness we will not specify it in the model description.
   
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_mean_movie_user_ab_rub
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_movie_user_ab_rub))))
-  
-  
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user",
+    get_pred_func_name = "get_pred_movie_user_ab_rub",
+    test_index_folds,
+    movielens_data = edx
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
@@ -1665,13 +1739,16 @@ if (load_output_data) {
                             l_u = Lambda_Min_RMSE_worst_fold_mu))
   }
   
-  #adding the results by applying get_RMSE_folds with get_pred_func = get_pred_mu_reg
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user reg",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_mu_reg_trained))))
+  #' adding the results by applying produce_append_rmse_folds_results with 
+  #' get_pred_func = get_pred_mu_reg_trained
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user reg",
+    get_pred_func_name = "get_pred_mu_reg_trained",
+    test_index_folds,
+    movielens_data = edx
+  )
   
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
@@ -1778,7 +1855,7 @@ if (load_output_data) {
   #8.06045
   
   #' the trained function is get_RMSE_worst_fold_m_u_g_reg with the lambda as 
-  #' obtained by minimizing the RMSE on the worst fold #and keeping 
+  #' obtained by minimizing the RMSE on the worst fold and keeping 
   #' user_pred_boundaries_training_set unset so it is re-extracted for each 
   #' training_set and decreasing min_nb_movies to defaults 1 for best precision 
   #' (default values)
@@ -1847,11 +1924,12 @@ if (load_output_data) {
   }
   
   # RMSE on worst fold on trained model - incremental lambdas
-  RMSE_mu_g_reg_MultipleLambda <- check_RMSE_worstfold(rmse_folds_results = rmse_folds_results ,
-                       test_index_folds = test_index_folds,
-                       movielens_data = edx,
-                       get_pred_func = get_pred_mu_g_reg_trained,
-                       verbose = TRUE)
+  RMSE_mu_g_reg_MultipleLambda <- check_RMSE_worstfold(
+    rmse_folds_results = rmse_folds_results ,
+    test_index_folds = test_index_folds,
+    movielens_data = edx,
+    get_pred_func = get_pred_mu_g_reg_trained,
+    verbose = TRUE)
   #RMSE = 0.857696501332263 for worst fold =  Fold01
   #' this is worse than single lambda value (0.8573178) so we will keep the 
   #' model with a single lambda.
@@ -1865,16 +1943,17 @@ if (load_output_data) {
                  )
       )
 
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_RMSE_mug_reg_trained
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user+genres reg",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_mug_reg_trained)))) 
-  
-  
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user+genres reg",
+    get_pred_func_name = "get_pred_mug_reg_trained",
+    test_index_folds,
+    movielens_data = edx
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
@@ -1970,15 +2049,17 @@ if (load_output_data) {
   #RMSE = 0.851451518686382 for worst fold =  Fold01
   #better than movie + users + genres regularised (0.8573178)
   
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_mu_indgenres
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user+indgenres",
-                        as.data.frame(get_RMSE_folds(test_index_folds,
-                                                     edx,
-                                                     get_pred_mu_indgenres)))) 
-  
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user+indgenres",
+    get_pred_func_name = "get_pred_mu_indgenres",
+    test_index_folds,
+    movielens_data = edx
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
@@ -2247,17 +2328,17 @@ if (load_output_data) {
                       )
   }
   
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_muig_reg_trained
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(do_remove_sparse = do_remove_sparse,
-                        method="movie+user+indgenres reg",
-                        as.data.frame(get_RMSE_folds(
-                          test_index_folds = test_index_folds,
-                          movielens_data = edx[,c(1,2,3,6)],
-                          get_pred_func = get_pred_muig_reg_trained
-                          ))))
- 
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user+indgenres reg",
+    get_pred_func_name = "get_pred_muig_reg_trained",
+    test_index_folds,
+    movielens_data = edx[,c(1,2,3,6)]
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
@@ -2440,18 +2521,18 @@ if (load_output_data) {
     )
   }
   
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_mu_ig_y_reg_trained
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(
-      do_remove_sparse = do_remove_sparse,
-      method="movie+user+indgenres+releaseyear reg",
-      as.data.frame(get_RMSE_folds(test_index_folds = test_index_folds,
-                                   movielens_data = edx,
-                                   get_pred_func = get_pred_mu_ig_y_reg_trained
-                                   ))))    
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user+indgenres+releaseyear reg",
+    get_pred_func_name = "get_pred_mu_ig_y_reg_trained",
+    test_index_folds,
+    movielens_data = edx
+  )
 
-  #incremental save
+    #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
   
@@ -2649,18 +2730,17 @@ if (load_output_data) {
     )
   }
 
-  #' adding the results by applying get_RMSE_folds with 
+  #' adding the results by applying produce_append_rmse_folds_results with 
   #' get_pred_func = get_pred_mu_ig_y_t_reg_trained
-  rmse_folds_results <- rmse_folds_results %>%  
-    bind_rows(bind_cols(
-      do_remove_sparse = do_remove_sparse,
-      method="movie+user+indgenres+releaseyear+timestamp reg",
-      as.data.frame(
-        get_RMSE_folds(test_index_folds = test_index_folds,
-                       movielens_data = edx,
-                       get_pred_func = get_pred_mu_ig_y_t_reg_trained
-                       )))) 
-  
+  rmse_folds_results <- produce_append_rmse_folds_results(
+    rmse_folds_results_df = rmse_folds_results,
+    do_remove_sparse,
+    method_added = "movie+user+indgenres+releaseyear+timestamp reg",
+    get_pred_func_name = "get_pred_mu_ig_y_t_reg_trained",
+    test_index_folds,
+    movielens_data = edx
+  )
+
   #incremental save
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = !load_output_data)
@@ -2678,7 +2758,7 @@ if (file.exists("Data/Output_021.RData")) {
 } else {
   #tidy version of the rmse folds results dataframe, ready for plotting
   rmse_folds_tidy <- rmse_folds_results %>%
-    gather("Folds","RMSE",-c(method,do_remove_sparse)) %>%
+    gather("Folds","RMSE",-c(method,do_remove_sparse,get_pred_func_name)) %>%
     group_by(method) %>%
     arrange(desc(RMSE)) %>%
     ungroup()
@@ -2799,31 +2879,39 @@ if (file.exists("Data/Output_022.RData")) {
   load("Data/Output_022.RData")
   savecount <- savecount + 1
   } else {
-  # we now apply the best models as determined using the training data, to the edx and validation sets. As this is 
-  # is unseen data, we cannot totally predict what the result will be however because 10 folds cross validation was
-  # used and models were tuned until the target RMSE were reached for all folds and with a significant margin, 
-  # we can have reasonable confidence that the target RMSEs should be met on that unseen data. 
+  #' we now apply the best models as determined using the training data, to the 
+  #' edx and validation sets. As this is unseen data, we cannot totally predict 
+  #' what the result will be however because 10 folds cross validation was used 
+  #' and models were tuned until the target RMSE were reached for all folds and 
+  #' with a significant margin, we can have reasonable confidence that the 
+  #' target RMSEs should be met on that unseen data. 
+  #' 
+  #' Models that have beaten the target RMSE for 25 marks 
+  beating_models <- rmse_folds_results_summary %>%
+    filter(max_RMSE < rmse_target_25) %>%
+    pull(method)
+  print(beating_models)
+  # [1] "movie+user+genres reg"
+  # [2] "movie+user+indgenres"
+  # [3] "movie+user+indgenres reg"
+  # [4] "movie+user+indgenres+releaseyear reg"
+  # [5] "movie+user+indgenres+releaseyear+timestamp reg"
   
-  #best model with regularisation
+  #best model with regularisation: 
   start_time <- Sys.time()
   final_pred_RMSE <-get_RMSE(validation$rating,
-                             get_pred_muigyt_reg(
+                             get_pred_mu_ig_y_t_reg_trained(
                                training_set = edx,
-                               test_set= validation,
-                               l_m = Lambda_Min_RMSE_worst_fold_mu,
-                               l_u = Lambda_Min_RMSE_worst_fold_mu,
-                               l_g = Lambda_Min_RMSE_worst_fold_mu_ig,
-                               l_y = Lambda_Min_RMSE_worst_fold_mu_ig_y,
-                               l_t = Lambda_Min_RMSE_worst_fold_mu_ig_y_t
+                               test_set= validation
                              )) 
   end_time <- Sys.time()
   duration <- end_time-start_time
   print(final_pred_RMSE)
   print(duration)
-  #Time difference of 5.321855 mins
-  #0.8428221 : the target RMSE of 0.8649 is beaten. 
-  #It is higher than the corresponding worst fold RMSE for that model (0.8402347)
-  #this makes the case for deriving a model beating the target with a significant margin.
+  #Time difference of 4.207377 mins
+  #0.8380426 : the target RMSE of 0.8649 is beaten. 
+  #' As expected, it is lower than the corresponding worst fold RMSE for that 
+  #' model (0.8402347)
   
   #best model with no regularisation for speed
   start_time <- Sys.time()
@@ -2834,10 +2922,35 @@ if (file.exists("Data/Output_022.RData")) {
   duration_fast <- end_time-start_time
   print(final_pred_fast_RMSE)
   print(duration_fast)
-  #Time difference of 1.198538 mins, about 3 times faster
+  #Time difference of 1.299407 mins, about 3 times faster
   #0.8492771 : the target RMSE of 0.8649 is beaten. 
-  #It is lower than the corresponding worst fold RMSE for that model (0.8514515)
-  #this makes the point that we cannot fully predict the result on the unseen data.
+  #' As expected, it is lower than the corresponding worst fold RMSE for that 
+  #' model (0.8514515)
+
+  #TODO run RMSE calc on all models with results better than the 25 marks target
+  rmse_validation_bestmodels <- rmse_folds_results_summary %>%
+    filter(max_RMSE <= rmse_target_25) %>%
+    left_join(rmse_folds_results[,c("method","get_pred_func_name")]) %>%
+    mutate(RMSE_validation = get_RMSE(
+      validation$rating,
+      get(get_pred_func_name)(
+        edx,
+        validation
+        )
+      )
+      )
+  
+  rmse_validation_worstmodels <- rmse_folds_results_summary %>%
+    filter(max_RMSE > rmse_target_25) %>%
+    left_join(rmse_folds_results[,c("method","get_pred_func_name")]) %>%
+    mutate(RMSE_validation = get_RMSE(
+      validation$rating,
+      get(get_pred_func_name)(
+        edx,
+        validation
+      )
+    )
+    )
   
   #save section output
   savecount <- save_output_data(savenum = savecount, 
