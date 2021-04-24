@@ -2879,25 +2879,17 @@ if (file.exists("Data/Output_022.RData")) {
   load("Data/Output_022.RData")
   savecount <- savecount + 1
   } else {
-  #' we now apply the best models as determined using the training data, to the 
+  ## FINAL PREDICTINO ####
+  #' we now apply the best model as determined using the training data, to the 
   #' edx and validation sets. As this is unseen data, we cannot totally predict 
-  #' what the result will be however because 10 folds cross validation was used 
-  #' and models were tuned until the target RMSE were reached for all folds and 
-  #' with a significant margin, we can have reasonable confidence that the 
-  #' target RMSEs should be met on that unseen data. 
+  #' what the result will be however because simplified 10 folds cross 
+  #' validation was used and models were tuned until the target RMSE were 
+  #' reached for all folds and with a significant margin, we can have reasonable
+  #'  confidence that the target RMSEs should be met on that unseen data. 
   #' 
-  #' Models that have beaten the target RMSE for 25 marks 
-  beating_models <- rmse_folds_results_summary %>%
-    filter(max_RMSE < rmse_target_25) %>%
-    pull(method)
-  print(beating_models)
-  # [1] "movie+user+genres reg"
-  # [2] "movie+user+indgenres"
-  # [3] "movie+user+indgenres reg"
-  # [4] "movie+user+indgenres+releaseyear reg"
-  # [5] "movie+user+indgenres+releaseyear+timestamp reg"
-  
-  #best model with regularisation: 
+
+  #' Final RMSE model "movie+user+indgenres+releaseyear+timestamp reg" on unseen
+  #' data validation set. 
   start_time <- Sys.time()
   final_pred_RMSE <-get_RMSE(validation$rating,
                              get_pred_mu_ig_y_t_reg_trained(
@@ -2913,6 +2905,26 @@ if (file.exists("Data/Output_022.RData")) {
   #' As expected, it is lower than the corresponding worst fold RMSE for that 
   #' model (0.8402347)
   
+  ## Target meeting decision method considerations####
+  #' Models that have met the condition for potentially beating the target RMSE 
+  #' on unseen data, which is to beat that target RMSE for the worst fold in 
+  #' terms of RMSE results in the best previously considered model. Practically 
+  #' it happened that with the seed chosen, this fold was always fold01.
+  beating_models <- rmse_folds_results_summary %>%
+    filter(max_RMSE < rmse_target_25) %>%
+    pull(method)
+  print(beating_models)
+  # [1] "movie+user+genres reg"
+  # [2] "movie+user+indgenres"
+  # [3] "movie+user+indgenres reg"
+  # [4] "movie+user+indgenres+releaseyear reg"
+  # [5] "movie+user+indgenres+releaseyear+timestamp reg"
+  
+  #' As a side note to be included in the report appendix section,we consider 
+  #' how valid our method to pick the most likely model to beat a target RMSE on
+  #' unseen data is. To do so,we also calculate the RMSE for the unseen data for
+  #' all models that do meet the condition of beatng the target on the worst
+  #' fold. 
   rmse_validation_bestmodels <- rmse_folds_results_summary %>%
     filter(max_RMSE <= rmse_target_25) %>%
     left_join(rmse_folds_results[,c("method","get_pred_func_name")]) %>%
@@ -2925,6 +2937,11 @@ if (file.exists("Data/Output_022.RData")) {
           )
         )
       )
+  
+  #' All 5 models do beat the target RMSE and also with a lower RMSE than was
+  #' obtained for the worst fold which appaer to validate the method of using
+  #' the worst fold as providing a conversative estimate of what the RMSE would
+  #' be on unseen data. 
   
   #save section output
   savecount <- save_output_data(savenum = savecount, 
