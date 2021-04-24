@@ -2913,51 +2913,24 @@ if (file.exists("Data/Output_022.RData")) {
   #' As expected, it is lower than the corresponding worst fold RMSE for that 
   #' model (0.8402347)
   
-  #best model with no regularisation for speed
-  start_time <- Sys.time()
-  final_pred_fast_RMSE <-get_RMSE(validation$rating,
-                                  get_pred_mu_indgenres(edx,validation
-                                  )) 
-  end_time <- Sys.time()
-  duration_fast <- end_time-start_time
-  print(final_pred_fast_RMSE)
-  print(duration_fast)
-  #Time difference of 1.299407 mins, about 3 times faster
-  #0.8492771 : the target RMSE of 0.8649 is beaten. 
-  #' As expected, it is lower than the corresponding worst fold RMSE for that 
-  #' model (0.8514515)
-
-  #TODO run RMSE calc on all models with results better than the 25 marks target
   rmse_validation_bestmodels <- rmse_folds_results_summary %>%
     filter(max_RMSE <= rmse_target_25) %>%
     left_join(rmse_folds_results[,c("method","get_pred_func_name")]) %>%
-    mutate(RMSE_validation = get_RMSE(
-      validation$rating,
-      get(get_pred_func_name)(
-        edx,
-        validation
+    mutate(
+      RMSE_validation = get_RMSE(
+        validation$rating,
+        get(get_pred_func_name)(
+          edx,
+          validation
+          )
         )
       )
-      )
-  
-  rmse_validation_worstmodels <- rmse_folds_results_summary %>%
-    filter(max_RMSE > rmse_target_25) %>%
-    left_join(rmse_folds_results[,c("method","get_pred_func_name")]) %>%
-    mutate(RMSE_validation = get_RMSE(
-      validation$rating,
-      get(get_pred_func_name)(
-        edx,
-        validation
-      )
-    )
-    )
   
   #save section output
   savecount <- save_output_data(savenum = savecount, 
                                 save_output = TRUE,
                                 objectlist <- c("final_pred_RMSE",
                                                 "duration",
-                                                "final_pred_fast_RMSE",
-                                                "duration_fast")
+                                                "rmse_validation_bestmodels")
                                 )
   }

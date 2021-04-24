@@ -1,7 +1,7 @@
 ---
-title: "MovieLens Report"
+title: "MovieLens Project Report"
 author: "cuisquare"
-date: "21/04/2021"
+date: "Last Updated: `r format(Sys.time(), '%d/%m/%Y')`"
 output: 
   pdf_document:
     extra_dependencies: ["float","flafter"]
@@ -38,15 +38,19 @@ if(do_run_calc ) {
   load("Data/Output_021.RData")
   load("Data/Output_022.RData")
 }
+if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
+if(!require(kableExtra)) install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+# library(knitr)
+# library(kableExtra)
 
 ```
 \newpage
 # Introduction
 ## General Objectives
 
-The MovieLens data set contains the ratings given by users on movies, with additional information on the movie including their genres, title and release year.
+The MovieLens data set contains the ratings given by users on movies, with additional information on the movie including their genres, title and release year. 
 
-The objective of the analysis is to produce rating prediction models that could be used towards a recommendation system for movies,  using the MovieLens data set. This would work as follow: A given user will rate a series of movies. Then based on this information, as well as information gathered on other users ratings, the model will provide a prediction for the ratings the user would have given to movies they have not yet watched. The highest rated such unseen movies would constitute the recommendation. 
+The *HarvardX: PH125.9x Data Science: Capstone* that this project is a submission towards, sets out a challenge to produce rating prediction models that could be used towards a recommendation system for movies, using the MovieLens data set. This would work as follow: A given user will rate a series of movies. Then based on this information, as well as information gathered on other users ratings, the model will provide a prediction for the ratings the user would have given to movies they have not yet watched. The highest rated such unseen movies would constitute the recommendation. 
 
 Therefore the objective is to build a model that provides the most accurate prediction of the ratings for movies yet unseen by a user.
 
@@ -72,7 +76,7 @@ In the case of classic 10 folds cross validation, used to determine the best mod
 
 ## Meeting the challenge objectives
 
-The challenge sets the target RMSE to be reached on the validation set in increasing order of achievement, as follow :
+The challenge in the *HarvardX: PH125.9x Data Science: Capstone* course sets the target RMSE to be reached on the validation set in increasing order of achievement, as follow :
 
 * RMSE > `r rmse_target_10` : worth 5 marks
 * `r rmse_target_15` < RMSE < `r rmse_target_10` : worth 10 marks
@@ -219,17 +223,17 @@ We can also consider the effect of when the rating was given. This will reflect 
 
 $$\hat{b_{u,t}} =\frac{1}{N_{t}+\lambda_{t}}\sum_{i}(r_{u,i}-\hat{\mu}-\hat{b_i}-\hat{b_u})_{u,t}$$
 
-## Numerical methods 
+## Prediction Model Parameter Tuning methods 
 
 ### Simplified K Folds cross validation
 
-Because we try to minimise the RMSE with lambda as a variable, in K folds cross validation we normally would modify the RMSE function to be the average or median RMSE over the K folds using that lambda parameter. This means we have K times more prediction function evaluation to carry out. Furthermore in some of the models there might be value in using different lambdas for each effects. This can be numerically demanding resulting in a very long run time. 
+Because we try to minimise the RMSE with lambda as a variable, in K folds cross validation we normally would modify the RMSE function to be the average or median RMSE over the K folds using that lambda parameter. This means we would have K times more prediction function evaluation to carry out. Furthermore in some of the models there might be value in using different lambdas for each effects. This can be numerically demanding resulting in a very long run time. 
 
-For this reason, a simpler method was chosen, which is to determine the minimising lambda only for one of the folds, then apply this lambda to all folds to obtain the 10 RMSEs, as a way to check that the RMSE did overall vary in the same direction across models. 
+For this reason, a simpler method was chosen, which is to determine the parameters that minimise RMSE only for one of the folds, then applying those parameters to all remaining folds to obtain the comrresponding RMSEs, to provide a check that the RMSE did overall vary in the same direction across models. That is, that if improvement was brought for the chosen fold on which parameters were tuned, that a similar improvement was also observed on the other folds.
 
-The choice for the particular fold to use was to pick the fold that gave the highest RMSE values among all folds, for the model that on average over the 10 folds gave the lowest RMSE over the models considered thus far. In other words, the "worst" fold for the "best" model. This was because it was considered that the likelihood that the lambda chosen has an impact was considered greater in the cases where the RMSE would be the highest. Therefore it could be supposed that this might improve the most results for data yet unseen. 
+The fold on which to tune the parameters was picked to be the one with the highest RMSE values among all folds, for the model that on average over the K folds gave the lowest RMSE over the models considered thus far. In other words, the "worst" fold for the "best" model. This was because it was considered that the likelihood that the tuning parameters have an impact on improving RMSE that generalises well to unseen data was considered greater in the cases where the RMSE would initially be the highest. 
 
-Because of this simplification it will be necessary to check whether indeed each model bringing improvement in the RMSE over the worst fold, will also bring similar improvement on all other folds.
+Because of this simplification it will be necessary to check the assumption that each model bringing improvement in the RMSE over the worst fold, also does bring similar improvement on all other folds.
 
 ### Function minimisation : Golden section search
 
@@ -282,9 +286,6 @@ method_min_RMSE_nonreg <- rmse_folds_results_summary %>%
   pull(method)
 
 index_min_RMSE_nonreg <- rmse_folds_results_summary$method == method_min_RMSE_nonreg
-
-
-
 ```
 
 The best model considered is one that incorporates the following effects: *`r rmse_folds_results_summary$method[index_min_RMSE]`* achieving a median RMSE of *`r rmse_folds_results_summary$median_RMSE[index_min_RMSE]`* with a maximum RMSE of **`r  rmse_folds_results_summary$max_RMSE[index_min_RMSE]`** obtained on `r worst_fold_best_method`. 
@@ -308,7 +309,7 @@ for (method_result_string in methods_betterthantarget){
 }
 ```
 
-The full simplified cross validation results for the models considered can be found in Table \ref{tab:results-table} and Table \ref{tab:results-summary-table}, ordered by descending mean RMSE (increasing mean prediction accuracy) over the 10 folds randomly generated, and located in the [Full Simplified Cross Validation Results] section of the [Appendix].
+The Simplified Cross Validation Full Results for the models considered can be found in Table \ref{tab:results-table} and Table \ref{tab:results-summary-table}, ordered by descending mean RMSE (increasing mean prediction accuracy) over the 10 folds randomly generated, and located in the [Simplified Cross Validation Full Results] section of the [Appendix].
 
 ### Visualisations
 
@@ -333,32 +334,21 @@ It also shows that the lowest target RMSE of *`r rmse_target_25`* is beaten with
 print(p_rmse_bestmethods_boxplot_zoom)
 ```
 
-It also provides verification that the simplified cross validation method described in section [Simplified K Folds cross validation] is valid indeed for each model, all 10 folds are within roughly the same RMSE interval with a standard deviation of around 0.00075 and follow the same variation in RMSE from model to model. It is even more clear when drawing each fold variation across models as a line plot in Figure \ref{fig:rmse-bestmethods-pointline} that tuning on the worst fold does improve the results on all folds in a very similar manner.
+It also provides verification that the simplified cross validation method described in section [Simplified K Folds cross validation] is valid indeed for each model, all 10 folds are within roughly the same RMSE interval with a standard deviation of around 0.00075 and follow the same variation in RMSE from model to model. It is even more clear when drawing each fold RMSE variation across models as a line plot in Figure \ref{fig:rmse-bestmethods-pointline} that tuning on the worst fold does improve the results on all folds in a very similar manner.
 
 ```{r label = rmse-bestmethods-pointline, fig.cap = "RMSE variation for each fold (below 0.88 RMSE only)"}
 print(p_rmse_bestmethods_pointline)
 ```
 
-## Final model prediction on validation set
+## Final model prediction on Unseen Data (validation set)
 
-Using the best models derived, it is now possible to calculate the RMSE on the unseen data contained in the *validation* set. To do so, the model is trained one last time on the whole *edx* (training) set, using the lambda parameter previously derived from simplified cross validation on the worst fold (fold01) (with verification on the other 9 folds), then a prediction is made on the *validation* set for which we calculate the RMSE. 
+Using the best model derived during simplified cross validation, it is now possible to calculate the RMSE on the unseen data contained in the *validation* set. To do so, the *movie+user+indgenres+releaseyear+timestamp reg* model is trained one last time on the whole *edx* (training) set, using the lambda parameters previously derived from simplified cross validation on the worst fold (fold01, with verification on the other 9 folds), then a prediction is made on the *validation* set for which we calculate the RMSE. 
 
-Doing so yields the following result: 
-
-* **`r final_pred_RMSE`** for the *movie+user+indgenres+releaseyear+timestamp reg* model 
-* **`r final_pred_fast_RMSE`** for the *movie+user+indgenres* model 
-
-Both models do beat the lowest target RMSE of *`r rmse_target_25`* by a significant margin. 
-
-Also we observe that both RMSE values are lower than the RMSE obtained on the "worst fold" during the 10 folds simplified cross validation. 
-
-This reinforces the idea that the proposed method to use the worst fold to provide a conservative estimate of what to expect on unseen data and to tune the regularised models parameters on that worst fold, was reasonable. 
-
-The prediction on the validation set was was produced *`r round(as.double(duration)/as.double(duration_fast),2)`* times slower for the regularised model compared to the non regularised model. To this should be added the time required to tune the lambda parameters of the regularised model during simplified cross validation. This highlights that depending on the target RMSE choices the non regularised model appears like a good choice if speed of execution is a factor.
+Doing so yields a RMSE of **`r final_pred_RMSE`** for the *movie+user+indgenres+releaseyear+timestamp reg* model which beats the lowest target RMSE of *`r rmse_target_25`* by a significant margin. 
 
 # Conclusion and Future Work
 
-Using a model that incorporated the effects of movie, user, date of rating, individual genres and release year to account for the variation in ratings, it was possible to reach predictions in movie ratings for unseen data with a RMSE below 0.85, beating the lowest RMSE target of `r rmse_target_25`.
+Using a model that incorporated the effects of movie, user, date of rating, individual genres and release year to account for the variation in ratings, it was possible to reach predictions in movie ratings for unseen data with a RMSE below 0.84, beating the lowest RMSE target of `r rmse_target_25` with a significant margin.
 
 The exploration of models has shown that regularisation brings improvement in predictions. Furthermore it was observed that using different lambda parameters for the different effects can bring further improvements in some cases. The effect of rounding predictions to the nearest allowed values ws considered but did not bring improvements. However considering the boundaries of the ratings for each user, it was possible to reduce the RMSE. See section [Refinements brought to Models] for more details.
 
@@ -369,6 +359,38 @@ Further models could also be used to reach further reduction in RMSE, such as ma
 It would also be of value to consider what happens when sparse data is not removed from the training set. That is, when we allow for data in the validation set to contain both movies and users which are not present in the training set. This would be a more general situation closer to reality as it would correspond to new movies added to the library or new users joining the system. 
 
 # Appendix 
+
+## Target meeting decision method considerations
+
+As explained in section [Meeting the challenge objectives] we made the choice that a particular model would be considered to be meeting the objective in terms of target RMSE if the worst fold over 10 randomly generated folds on the *edx* set would have RMSE beating that target RMSE with a margin.
+
+We saw in the [Results] section that the best model devised does beat the target RMSE on unseen data. It is however of interest to check whether the other models that also meet our set conditions as being likely to beat the target RMSE actually do, in order to get an idea of how appropriate was our method.
+
+The results for all such models can be found in Table \ref{tab:rmse-validation-best-models}. One can see that all models that do meet the condition set out do end up beating the RMSE target on the unseen data. It therefore acts as an indication that that the worst fold simplified cross validation be sufficient to determine when a particular target RMSE might be beaten on unseen data. 
+
+In particular it is of interest that all 5 models do have a lower RMSE on the unseen data than that obtained on the worst fold during simplified cross validation. This appears to confirm the assumption that the worst fold might be used as a conservative value of the RMSE on unseen data provided that data is likely to be at least as statistically representative as the fold data, which due to the fact that the folds are a smaller subset of the total movielens data than the validation data, is the case.
+
+
+```{r label = rmse-validation-best-models}
+#TODO finish writing
+
+rmse_validation_bestmodels_table <- rmse_validation_bestmodels %>%
+  select(method,max_RMSE,RMSE_validation)
+
+names(rmse_validation_bestmodels_table) <- str_remove(
+  string = str_replace(
+    string = names(rmse_validation_bestmodels_table),
+    pattern = "_RMSE",
+    replacement = "_RMSESimplifiedXVal"
+    ),
+  pattern = "_"
+  )
+
+kable(x=rmse_validation_bestmodels_table,caption=paste("Validation RMSE for 5 models meeting the target beating objective")) %>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position","repeat_header"),
+                repeat_header_continued = T)
+```
 
 ## Refinements brought to Models
 ### Rating Rounding / Adjustments
@@ -393,8 +415,7 @@ When considering models that were regularised, we have considered two cases:
 * one specific lambda parameter for each new effect when adding a new effect
 
 ```{r label = SingleVsMultipleLambdaComp-table}
-library(knitr)
-library(kableExtra)
+
 
 SingleVsMultipleLambdaComp_table <- SingleVsMultipleLambdaComp %>%
   mutate(BestModel = if_else(SingleLambdaRMSE < MultipleLambdaRMSE,"Single Lambda","Multiple Lambdas"))
@@ -435,7 +456,7 @@ In all regularised models, we reported the version (single  or multiple lambdas)
 \newpage
 \blandscape
 
-## Full Simplified Cross Validation Results
+## Simplified Cross Validation Full Results
 
 Similarly to the [Visualisations] section, we have colour coded the RMSE results, as follow :
 
@@ -447,9 +468,9 @@ Similarly to the [Visualisations] section, we have colour coded the RMSE results
 
 
 ```{r label = results-table}
-library(knitr)
-library(kableExtra)
-library(tidyverse)
+# library(knitr)
+# library(kableExtra)
+# library(tidyverse)
 
   # rmse_target_25 <- 0.86490
   # rmse_target_20 <- 0.86499
@@ -563,8 +584,8 @@ options(digits = 5)   # report 3 significant digits
 \newpage
 
 ```{r label = results-summary-table}
-library(knitr)
-library(kableExtra)
+# library(knitr)
+# library(kableExtra)
 
 rmse_folds_results_summary_table <- rmse_folds_results_summary %>%
   select(-do_remove_sparse) %>% 
