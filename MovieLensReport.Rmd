@@ -344,7 +344,7 @@ print(p_rmse_bestmethods_pointline)
 
 The best model as verified by simplified cross validation is one that applies the effect of movie, user, individual genres, movie release year and rating timestamp with regularisation applied, using separate tuned lambda parameters for each effect expect for the movie and user effect (see section [Multiple Lambda vs Single Lambda Regularisation] for details). The model also includes an adjustment of predicted ratings to be within the allowed boundary for ratings, as well as another adjustment of predicted ratings to be within each user rating range (more details in sections [Rating Rounding / Adjustments])
 
-We can now calculate the RMSE on the unseen data contained in the *validation* set using the whole *edx* set as a training set. To do so, the best model model is trained one last time on the whole *edx* (training) set using the lambda parameters previously derived during simplified 10 folds cross validation. We then make a prediction on the *validation* set for which we calculate the RMSE. 
+We can now calculate the RMSE on the unseen data contained in the *validation* set using the whole *edx* set as a training set. To do so, the best model is trained one last time on the whole *edx* (training) set using the lambda parameters previously derived during simplified 10 folds cross validation. We then make a prediction on the *validation* set for which we calculate the RMSE. 
 
 Best model  *movie+user+indgenres+releaseyear+timestamp reg* yields a RMSE of **`r final_pred_RMSE`** which beats the lowest target RMSE of *`r rmse_target_25`* by a significant margin. 
 
