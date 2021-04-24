@@ -467,30 +467,6 @@ Find_Get_Val_Local_Minimum_Golden <- function(X_Min,X_Max,
   )
 }
 
-## Function append_get_pred_func ####
-append_get_pred_func <- function(pred_functions_df,
-                                 method_added,
-                                 get_pred_func_name_added) {
-  
-  #' empty dataframe to contain the pred functions. If the data frame already 
-  #' exists then it is kept ready to be appended to 
-  if (!exists(deparse(substitute(pred_functions)))) {
-    pred_functions_df <- data.frame()
-  }
-  
-  #' we filter out any existing pred_func with the same
-  #' method name prior to appending new results ensuring unique values
-  if(nrow(pred_functions_df >0)) {
-    pred_functions_df <- pred_functions_df %>% 
-      filter(method != method_added)
-  }
-
-  pred_functions_df <- pred_functions_df %>%
-    bind_rows(data.frame(method = method_added, 
-                         get_pred_func_name = get_pred_func_name_added)
-  )
-}
-
 ## Function produce_append_rmse_results ####
 #' produces the RMSE results for all folds and append them to a results data 
 #' frame or create a data frame if it does not exist.
